@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Azure DevOps Notifier",
+  "version": "1.2.0",
+  "minimum_chrome_version": "116",
+  "description": "Notifications for Azure DevOps pull request activity, right in your browser toolbar.",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "ui-build/popup.html",
+    "default_title": "Azure DevOps Notifier"
+  },
+  "options_page": "ui-build/dashboard.html",
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "offscreen"
+  ],
+  "optional_permissions": [
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://dev.azure.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

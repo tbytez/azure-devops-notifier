@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure DevOps Notifier</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div class="popup">
+  <header class="pop-head">
+    <svg class="logo" viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+      <rect x="1" y="1" width="30" height="30" rx="7" fill="#0078d4"/>
+      <path d="M9 22a5 5 0 1 1 0-10 5 5 0 0 1 9-2 5 5 0 0 1 7 4.6A4 4 0 0 1 25 22H9z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="10" cy="13" r="2" fill="#fff"/>
+      <circle cx="23" cy="12" r="2" fill="#fff"/>
+    </svg>
+    <div class="pop-title">
+      <strong>Azure DevOps Notifier</strong>
+      <span id="pop-org" class="muted"></span>
+    </div>
+    <span id="pop-unread" class="unread-pill hidden"></span>
+  </header>
+
+  <div id="pop-demo" class="demo-note hidden">Demo data · not connected</div>
+
+  <div id="pop-disconnected" class="pop-body hidden">
+    <p class="muted">Connect an Azure DevOps organization to start getting pull request notifications.</p>
+    <button id="pop-setup" class="btn btn-primary btn-block" type="button">Set up</button>
+  </div>
+
+  <div id="pop-main" class="pop-body hidden">
+    <div class="pop-stats">
+      <span id="pop-watching"></span>
+      <span id="pop-checked" class="muted"></span>
+    </div>
+    <div id="pop-error" class="alert alert-error hidden" role="alert"></div>
+    <ul id="pop-list" class="pop-list"></ul>
+    <div id="pop-empty" class="empty-sm hidden">
+      <p class="muted">No unread notifications. You're all caught up.</p>
+    </div>
+    <div class="pop-actions">
+      <button id="pop-sync" class="btn btn-secondary btn-sm" type="button">Sync now</button>
+      <button id="pop-pause" class="btn btn-ghost btn-sm" type="button"></button>
+      <button id="pop-dashboard" class="btn btn-ghost btn-sm" type="button">Dashboard</button>
+      <button id="pop-settings" class="btn btn-ghost btn-sm" type="button">Settings</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script type="module" src="ui/popup.js"></script>
+</body>
+</html>

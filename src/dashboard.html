@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure DevOps Notifier</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="7" fill="#0078d4"/>
+        <path d="M9 22a5 5 0 1 1 0-10 5 5 0 0 1 9-2 5 5 0 0 1 7 4.6A4 4 0 0 1 25 22H9z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="10" cy="13" r="2" fill="#fff"/>
+        <circle cx="23" cy="12" r="2" fill="#fff"/>
+      </svg>
+      <div>
+        <h1 class="brand-name">Azure DevOps Notifier</h1>
+        <p class="brand-sub" id="brand-sub">Pull request activity, in your browser.</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="conn-badge" class="conn-badge hidden"></span>
+      <span id="sync-info" class="sync-info"></span>
+    </div>
+  </header>
+
+  <div id="demo-banner" class="demo-banner hidden">
+    <strong>Demo data · not connected.</strong>
+    This preview uses fixture data only — no network calls, no credentials.
+    <a id="exit-demo" href="dashboard.html">Exit demo</a>
+    <button id="reset-demo" class="link-btn" type="button">Reset demo</button>
+  </div>
+
+  <div id="global-error" class="alert alert-error hidden" role="alert"></div>
+
+  <div class="layout">
+    <nav class="sidebar" aria-label="Sections">
+      <button class="nav-item active" data-view="activity" type="button">Activity</button>
+      <button class="nav-item" data-view="watching" type="button">Watching</button>
+      <button class="nav-item" data-view="settings" type="button">Settings</button>
+      <div class="sidebar-foot">
+        <p>Runs locally in Chrome.<br>No server, no telemetry.<br>Your PAT stays on this device.</p>
+      </div>
+    </nav>
+
+    <main class="content">
+      <section id="view-connect" class="view hidden">
+        <div class="connect-wrap">
+          <div class="card connect-card">
+            <h2>Connect your organization</h2>
+            <p class="muted">Azure DevOps Notifier watches pull requests on <strong>Azure DevOps Services</strong> (dev.azure.com) and notifies you about comments, reviews, checks and more. Azure DevOps Server (on-premises) is not supported.</p>
+            <div id="connect-step-1">
+              <label class="field">
+                <span>Organization</span>
+                <input id="conn-org" type="text" autocomplete="organization" placeholder="e.g. contoso" spellcheck="false">
+              </label>
+              <label class="field">
+                <span>Personal Access Token</span>
+                <input id="conn-token" type="password" autocomplete="off" placeholder="Paste your PAT">
+              </label>
+              <div class="pat-help">
+                <p class="muted small">Create a PAT at <code>dev.azure.com/{org}/_usersSettings/tokens</code> with scopes:</p>
+                <ul class="scope-list">
+                  <li><strong>Code (Read)</strong> — read pull requests, threads, statuses</li>
+                  <li><strong>Project and Team (Read)</strong> — list projects for scope selection</li>
+                </ul>
+                <p class="muted small">The token is stored only in this extension's local Chrome storage (not synced, not encrypted by the OS keychain) and is never sent anywhere except dev.azure.com. Set an expiry on the PAT and revoke it when no longer needed.</p>
+              </div>
+              <div id="connect-error" class="alert alert-error hidden" role="alert"></div>
+              <button id="connect-btn" class="btn btn-primary" type="button">Connect</button>
+            </div>
+            <div id="connect-step-2" class="hidden">
+              <h3>Choose projects to watch</h3>
+              <p class="muted small" id="connect-identity"></p>
+              <div id="connect-projects" class="project-picker"></div>
+              <label class="check-row">
+                <input id="connect-desktop" type="checkbox" checked>
+                <span>Show desktop notifications (Chrome will ask for permission)</span>
+              </label>
+              <p class="alert alert-warn" id="connect-warn">Connecting a different organization or account replaces your saved watches and history.</p>
+              <div class="form-row">
+                <button id="connect-confirm" class="btn btn-primary" type="button">Start watching</button>
+                <button id="connect-cancel" class="btn btn-ghost" type="button">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-activity" class="view hidden">
+        <div class="page-head">
+          <h2>Activity</h2>
+          <p class="muted" id="activity-sub">Notifications from your watched pull requests.</p>
+        </div>
+        <div class="stat-row" id="stat-row"></div>
+        <div class="toolbar">
+          <div class="seg" role="group" aria-label="Read filter">
+            <button class="seg-btn active" data-filter="all" type="button">All</button>
+            <button class="seg-btn" data-filter="unread" type="button">Unread</button>
+          </div>
+          <select id="filter-category" aria-label="Filter by category">
+            <option value="">All categories</option>
+          </select>
+          <input id="filter-search" type="search" placeholder="Search titles, repos, people…" aria-label="Search notifications">
+          <button id="mark-all" class="btn btn-ghost" type="button">Mark all read</button>
+          <button id="sync-now" class="btn btn-secondary" type="button">Sync now</button>
+        </div>
+        <div id="activity-list" class="card-list"></div>
+        <div id="activity-empty" class="empty hidden">
+          <p class="empty-title">No notifications yet</p>
+          <p class="muted">The first successful check baselines quietly — new activity appears here afterwards.</p>
+        </div>
+      </section>
+
+      <section id="view-watching" class="view hidden">
+        <div class="page-head">
+          <h2>Watching</h2>
+          <p class="muted">Pull requests you follow — yours automatically, plus any you add manually.</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Watch a pull request</h3>
+          <form id="watch-form" class="watch-form">
+            <input id="watch-url" type="url" placeholder="https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{id}" aria-label="Pull request URL" spellcheck="false">
+            <button class="btn btn-primary" type="submit">Watch</button>
+          </form>
+          <div id="watch-error" class="alert alert-error hidden" role="alert"></div>
+        </div>
+        <div id="watch-list" class="card-list"></div>
+        <div id="watch-empty" class="empty hidden">
+          <p class="empty-title">Nothing watched yet</p>
+          <p class="muted">Enable “watch my pull requests” in Settings or add a PR by URL above.</p>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view hidden">
+        <div class="page-head">
+          <h2>Settings</h2>
+          <p class="muted">Polling, activity types, and account.</p>
+        </div>
+        <div id="settings-error" class="alert alert-error hidden" role="alert"></div>
+        <div id="settings-ok" class="alert alert-ok hidden" role="status"></div>
+
+        <div class="card">
+          <h3 class="card-title">Account</h3>
+          <div id="account-info" class="account-info"></div>
+          <div class="form-row">
+            <button id="reconnect-btn" class="btn btn-secondary" type="button">Reconnect</button>
+            <button id="disconnect-btn" class="btn btn-danger" type="button">Disconnect</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Projects</h3>
+          <p class="muted small">Discover PRs you created in these projects. Existing watches continue until unwatched.</p>
+          <div id="project-picker" class="project-picker"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Discovery</h3>
+          <label class="check-row">
+            <input id="set-autowatch" type="checkbox">
+            <span>Automatically watch pull requests I create in the selected projects</span>
+          </label>
+          <label class="check-row">
+            <input id="set-ignoreself" type="checkbox">
+            <span>Ignore activity I create myself</span>
+          </label>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Polling</h3>
+          <label class="field">
+            <span>Check for updates every</span>
+            <select id="set-interval">
+              <option value="1">1 minute</option>
+              <option value="2">2 minutes</option>
+              <option value="5">5 minutes</option>
+              <option value="10">10 minutes</option>
+            </select>
+          </label>
+          <label class="check-row">
+            <input id="set-paused" type="checkbox">
+            <span>Pause polling (manual “Sync now” still works)</span>
+          </label>
+          <p class="muted small">Polling only runs while Chrome is open. Only changes observed between checks are reported — activity between polls may be missed. Checks cover pull request statuses and policy evaluations, not every pipeline run.</p>
+          <label class="check-row">
+            <input id="set-desktop" type="checkbox">
+            <span>Show desktop notifications</span>
+          </label>
+          <p id="desktop-note" class="muted small hidden">Desktop alerts need Chrome's optional “notifications” permission — your OS notification settings may also apply.</p>
+          <button id="desktop-allow" class="btn btn-secondary btn-sm hidden" type="button">Allow desktop alerts</button>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Activity types</h3>
+          <p class="muted small">Global defaults — individual watches can override these.</p>
+          <div id="global-categories" class="cat-grid"></div>
+        </div>
+
+        <div class="form-row">
+          <button id="save-settings" class="btn btn-primary" type="button">Save settings</button>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script type="module" src="ui/dashboard.js"></script>
+</body>
+</html>
