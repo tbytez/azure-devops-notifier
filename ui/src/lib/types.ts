@@ -31,6 +31,7 @@ export interface PublicNotification {
   projectName: string;
   prId: number;
   url: string;
+  prUrl: string;
   actorName: string | null;
   createdAt: number;
   read: boolean;

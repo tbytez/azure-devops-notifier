@@ -38,6 +38,7 @@ function mockChrome(opts = {}) {
     action: {
       setBadgeText: async ({ text }) => { badge.text = text; },
       setBadgeBackgroundColor: async ({ color }) => { badge.color = color; },
+      setBadgeTextColor: async ({ color }) => { badge.textColor = color; },
       setTitle: async ({ title }) => { badge.title = title; },
     },
     notifications: opts.noNotifications ? undefined : {
@@ -155,10 +156,15 @@ test('notification click listener registers when permission granted later, exact
   for (const fn of listeners.permAdded) fn({ permissions: ['notifications'] });
   assert.equal(listeners.notifClicked.length, 1);
   seedNotifState(store, 1);
-  await listeners.notifClicked[0]('n0');
+  const seeded = store.get('azdoNotifier.v1');
+  seeded.notifications[0].key = 'contoso/p/r/1';
+  seeded.notifications[0].category = 'comments';
+  seeded.notifications[0].id = 'contoso/p/r/1|comments|comment:42:7|1';
+  const notificationId = seeded.notifications[0].id;
+  await listeners.notifClicked[0](notificationId);
   await new Promise((r) => setTimeout(r, 20));
   assert.equal(tabsCreated.length, 1);
-  assert.ok(tabsCreated[0].url.includes('pullrequest/1'));
+  assert.equal(tabsCreated[0].url, 'https://dev.azure.com/contoso/p/_git/r/pullrequest/1?_a=overview&discussionId=42');
   const saved = store.get('azdoNotifier.v1');
   assert.equal(saved.notifications[0].read, true);
 });

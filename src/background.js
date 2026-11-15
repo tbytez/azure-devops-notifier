@@ -17,7 +17,8 @@ async function refreshBadge(chromeApi) {
     const unread = pub.unreadCount;
     const hasError = Boolean(pub.errors.global) || Object.keys(pub.errors.items || {}).length > 0;
     await chromeApi.action.setBadgeText({ text: unread > 0 ? String(Math.min(unread, 999)) : hasError ? '!' : '' });
-    await chromeApi.action.setBadgeBackgroundColor({ color: hasError && unread === 0 ? '#b45309' : '#0078d4' });
+    await chromeApi.action.setBadgeBackgroundColor({ color: hasError && unread === 0 ? '#92400e' : '#111827' });
+    await chromeApi.action.setBadgeTextColor?.({ color: '#ffffff' });
     const parts = ['Azure DevOps Notifier'];
     if (pub.settings.organization) parts.push(`org: ${pub.settings.organization}`);
     if (unread) parts.push(`${unread} unread`);

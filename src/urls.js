@@ -108,6 +108,98 @@ export function buildPrWebUrl({ organization, projectName, repoName, prId }) {
   return `https://${AZURE_HOST}/${org}/${encodeURIComponent(projectName)}/_git/${encodeURIComponent(repoName)}/pullrequest/${prId}`;
 }
 
+function positiveId(value) {
+  const text = String(value ?? '');
+  return /^[1-9]\d*$/.test(text) && Number.isSafeInteger(Number(text)) ? text : null;
+}
+
+function discussionTarget(event) {
+  const category = event.category;
+  if (category !== 'comments' && category !== 'threads') return null;
+  let entity = event.entityKey;
+  if (!entity && event.key) {
+    const prefix = `${event.key}|${category}|`;
+    const id = String(event.id || '');
+    if (!id.startsWith(prefix)) return null;
+    const tail = id.slice(prefix.length);
+    const parts = tail.split('|');
+    if (parts.length !== 2 || !positiveId(parts[1])) return null;
+    entity = parts[0];
+  }
+  const match = String(entity || '').match(category === 'comments'
+    ? /^comment:([1-9]\d*):([1-9]\d*)$/
+    : /^thread:([1-9]\d*):status$/);
+  return match && positiveId(match[1]) && (category !== 'comments' || positiveId(match[2]))
+    ? match[1] : null;
+}
+
+function filePath(value) {
+  return typeof value === 'string' && value.startsWith('/') && value.length <= 4096
+    && !/[\\\u0000-\u001f\u007f]/.test(value) ? value : null;
+}
+
+function safeActivityUrl(raw, base) {
+  if (typeof raw !== 'string' || /[\\\u0000-\u001f\u007f]/.test(raw)) return null;
+  let url;
+  try { url = new URL(raw); } catch { return null; }
+  if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+  if (rawPathOf(raw).split('/').some((s) => ['.', '..'].includes(safeDecode(s)))) return null;
+  const parsed = parsePrUrl(raw);
+  if (parsed.ok && parsed.canonicalUrl === base.canonicalUrl) {
+    const result = new URL(base.canonicalUrl);
+    const discussion = positiveId(url.searchParams.get('discussionId'));
+    const tab = url.searchParams.get('_a');
+    if (tab && ['overview', 'files', 'commits', 'updates'].includes(tab)) result.searchParams.set('_a', tab);
+    if (discussion) {
+      result.searchParams.set('discussionId', discussion);
+      const path = filePath(url.searchParams.get('path'));
+      if (path) result.searchParams.set('path', path);
+    }
+    return result.search ? result.href : null;
+  }
+  const repositoryPath = new URL(base.canonicalUrl).pathname.replace(/\/pullrequest\/\d+$/, '');
+  if (url.hostname === AZURE_HOST && new RegExp(`^${repositoryPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/commit/[a-f0-9]{40,64}$`, 'i').test(url.pathname)) {
+    return `${url.origin}${url.pathname}`;
+  }
+  const buildPath = `/${base.organization}/${encodeURIComponent(base.projectName)}/_build/results`;
+  const buildId = positiveId(url.searchParams.get('buildId'));
+  if (url.hostname === AZURE_HOST && url.pathname === buildPath && buildId) {
+    return `${url.origin}${url.pathname}?buildId=${buildId}`;
+  }
+  return null;
+}
+
+// Watch URLs identify PRs; notification URLs identify the activity within them.
+export function buildNotificationUrl(prUrl, event = {}) {
+  const base = parsePrUrl(prUrl);
+  if (!base.ok) return '';
+  const threadId = discussionTarget(event);
+  const path = filePath(event.target?.filePath);
+  if (threadId && path) {
+    const url = new URL(base.canonicalUrl);
+    url.searchParams.set('_a', 'files');
+    url.searchParams.set('discussionId', threadId);
+    url.searchParams.set('path', path);
+    return url.href;
+  }
+  const supplied = safeActivityUrl(event.target?.url || event.url, base);
+  if (supplied) {
+    const suppliedDiscussion = new URL(supplied).searchParams.get('discussionId');
+    if (!threadId || suppliedDiscussion === threadId) return supplied;
+  }
+  if (threadId) {
+    const url = new URL(base.canonicalUrl);
+    url.searchParams.set('_a', 'overview');
+    url.searchParams.set('discussionId', threadId);
+    return url.href;
+  }
+  const sha = event.target?.commitId;
+  if (event.category === 'commits' && typeof sha === 'string' && /^[a-f0-9]{40,64}$/i.test(sha)) {
+    return base.canonicalUrl.replace(/\/pullrequest\/\d+$/, `/commit/${sha}`);
+  }
+  return event.category === 'commits' ? `${base.canonicalUrl}?_a=commits` : base.canonicalUrl;
+}
+
 export function watchKey({ organization, projectId, repoId, prId }) {
   return [
     normalizeOrganization(organization) || String(organization || '').toLowerCase(),

@@ -109,6 +109,29 @@ test('new comment after baseline produces one notification', async () => {
   assert.equal(res.added[0].category, 'comments');
   assert.equal(state.notifications.length, 1);
   assert.equal(state.notifications[0].id, res.added[0].id);
+  assert.equal(res.added[0].url, `${w.url}?_a=overview&discussionId=1`);
+});
+
+test('file-context enrichment is quiet; replies and resolved threads keep their exact discussion destination', async () => {
+  const w = makeWatch();
+  const state = makeState([w]);
+  const old = { id: 1, content: 'Old', author: { id: 'other' }, commentType: 'text' };
+  let thread = { id: 42, status: 'active', comments: [old] };
+  const api = makeApi({ getThreads: async () => [thread] });
+  await runPoll(harness(state, api).deps);
+  thread = { ...thread, threadContext: { filePath: '/src/a #.ts' } };
+  assert.equal((await runPoll(harness(state, api).deps)).added.length, 0);
+  thread = { ...thread, comments: [old, { ...old, id: 2, content: 'A reply', parentCommentId: 1 }] };
+  const emitted = [];
+  const reply = await runPoll(harness(state, api, { emitDesktop: (n) => emitted.push(n) }).deps);
+  const expected = `${w.url}?_a=files&discussionId=42&path=%2Fsrc%2Fa+%23.ts`;
+  assert.equal(reply.added[0].url, expected);
+  assert.equal(state.notifications[0].url, expected);
+  assert.equal(emitted[0].url, expected);
+  thread = { ...thread, status: 'fixed' };
+  const resolved = await runPoll(harness(state, api).deps);
+  assert.equal(resolved.added[0].url, expected);
+  assert.equal((await runPoll(harness(state, api).deps)).added.length, 0);
 });
 
 test('repeat sync does not duplicate notifications', async () => {

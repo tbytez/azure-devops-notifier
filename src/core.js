@@ -106,7 +106,8 @@ function normalizeThreads(threadsData) {
   for (const t of list) {
     if (!t || t.id == null) continue;
     const tid = String(t.id);
-    threads[tid] = { status: str(t.status) || 'unknown' };
+    const filePath = str(t.threadContext?.filePath) || null;
+    threads[tid] = { status: str(t.status) || 'unknown', filePath };
     const cls = Array.isArray(t.comments) ? t.comments : [];
     for (const c of cls) {
       if (!c || c.id == null || isSystemOrDeleted(c)) continue;
@@ -115,6 +116,7 @@ function normalizeThreads(threadsData) {
       const updated = pickTime(c.lastContentUpdatedDate, c.lastUpdatedDate, c.publishedDate);
       comments[cid] = {
         threadId: tid,
+        filePath,
         authorId: str(author.id) || null,
         authorName: str(author.displayName) || str(author.uniqueName) || 'Unknown',
         updated,
@@ -164,7 +166,7 @@ function normalizeChecks(statusesData) {
     if (!s || !s.context) continue;
     const ctx = `${str(s.context.genre)}/${str(s.context.name)}`;
     if (!ctx || ctx === '/') continue;
-    const cand = { state: str(s.state), created: Date.parse(s.creationDate || '') || 0, id: Number(s.id) || 0 };
+    const cand = { state: str(s.state), created: Date.parse(s.creationDate || '') || 0, id: Number(s.id) || 0, targetUrl: str(s.targetUrl) || null };
     const prev = byContext.get(ctx);
     if (!prev || cand.created > prev.created || (cand.created === prev.created && cand.id > prev.id)) {
       byContext.set(ctx, cand);
@@ -230,6 +232,7 @@ function makeEvent(prKey, category, entityKey, revision, fields) {
     actorName: fields.actorName ?? null,
     title: fields.title,
     body: fields.body ?? '',
+    ...(fields.target ? { target: fields.target } : {}),
   };
 }
 
@@ -242,6 +245,7 @@ function diffComments(prKey, prev, next, events, revs) {
     const old = p[cid];
     const rec = {
       threadId: c.threadId,
+      filePath: c.filePath,
       authorId: c.authorId,
       authorName: c.authorName,
       updated: c.updated,
@@ -253,6 +257,7 @@ function diffComments(prKey, prev, next, events, revs) {
         actorId: c.authorId,
         actorName: c.authorName,
         title: 'New comment',
+        target: { filePath: c.filePath },
         body: excerpt(c.hash),
       }));
       rec.rev = rev;
@@ -264,6 +269,7 @@ function diffComments(prKey, prev, next, events, revs) {
           actorId: c.authorId,
           actorName: c.authorName,
           title: 'Comment edited',
+          target: { filePath: c.filePath },
           body: excerpt(c.hash),
         }));
         rec.rev = rev;
@@ -290,7 +296,7 @@ function diffThreads(prKey, prev, next, events, revs) {
   for (const tid of Object.keys(n).sort()) {
     const t = n[tid];
     const old = p[tid];
-    const rec = { status: t.status };
+    const rec = { status: t.status, filePath: t.filePath };
     if (old && old.status !== t.status) {
       const ek = `thread:${tid}:status`;
       const rev = bumpRev(revs, ek);
@@ -306,7 +312,7 @@ function diffThreads(prKey, prev, next, events, revs) {
         title = 'Thread status changed';
         body = `${THREAD_STATUS_LABELS[old.status] || old.status} → ${THREAD_STATUS_LABELS[t.status] || t.status}.`;
       }
-      events.push(makeEvent(prKey, 'threads', ek, rev, { title, body }));
+      events.push(makeEvent(prKey, 'threads', ek, rev, { title, body, target: { filePath: t.filePath } }));
       rec.rev = rev;
     } else {
       rec.rev = old?.rev || revs.revisions[`thread:${tid}:status`] || 1;
@@ -409,6 +415,7 @@ function diffCommits(prKey, prev, next, events, revs) {
       const rev = bumpRev(revs, 'commit:source');
       events.push(makeEvent(prKey, 'commits', 'commit:source', rev, {
         title: 'New commits',
+        target: { commitId: nSha },
         body: `Source branch updated to ${shortSha(nSha)}.`,
       }));
       snap.sourceCommit = nSha;
@@ -486,6 +493,7 @@ function diffChecks(prKey, prev, next, events, revs) {
         const label = CHECK_STATE_LABELS[c.state] || c.state || 'updated';
         events.push(makeEvent(prKey, 'checks', ek, rev, {
           title: old ? 'Check updated' : 'New check',
+          target: { url: c.targetUrl },
           body: `${ctx}: ${old ? `${CHECK_STATE_LABELS[old.state] || old.state} → ` : ''}${label}.`,
         }));
         snap[ctx] = { ...c, rev };

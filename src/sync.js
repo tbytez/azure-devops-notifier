@@ -1,5 +1,5 @@
 import { diffPr, eventEnabled } from './core.js';
-import { watchKey, buildPrWebUrl } from './urls.js';
+import { watchKey, buildPrWebUrl, buildNotificationUrl } from './urls.js';
 import { NOTIFICATION_LIMIT } from './state.js';
 
 const CONCURRENCY = 3;
@@ -161,7 +161,8 @@ function buildNotification(event, watch, now) {
     repoName: watch.repoName,
     projectName: watch.projectName,
     prId: watch.prId,
-    url: watch.url,
+    prUrl: watch.url,
+    url: buildNotificationUrl(watch.url, event),
     actorName: event.actorName || null,
     createdAt: now,
     read: false,

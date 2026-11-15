@@ -1,4 +1,5 @@
 import { CATEGORIES } from './core.js';
+import { buildNotificationUrl, parsePrUrl } from './urls.js';
 
 export const STATE_KEY = 'azdoNotifier.v1';
 export const NOTIFICATION_LIMIT = 300;
@@ -88,6 +89,8 @@ function sanitizeWatch(w) {
 
 function sanitizeNotification(n) {
   if (!isPlainObject(n) || !n.id) return null;
+  const parsed = parsePrUrl(n.prUrl || n.url);
+  const prUrl = parsed.ok ? parsed.canonicalUrl : '';
   return {
     id: String(n.id),
     key: String(n.key || ''),
@@ -98,7 +101,8 @@ function sanitizeNotification(n) {
     repoName: String(n.repoName || ''),
     projectName: String(n.projectName || ''),
     prId: Number(n.prId) || 0,
-    url: String(n.url || ''),
+    prUrl,
+    url: buildNotificationUrl(prUrl, n),
     actorName: typeof n.actorName === 'string' ? n.actorName : null,
     createdAt: Number(n.createdAt) || 0,
     read: n.read === true,
