@@ -6,10 +6,10 @@ Chrome extension (Manifest V3) that polls Azure DevOps Services (`dev.azure.com`
 
 - `npm run dev -- --host 127.0.0.1 --port 8933` — Vite dev server for the React UI.
 - `npm test` — Node built-in test runner (`node --test test/`), no network. Requires Node 22.18+ (native TypeScript stripping for `test/theme.test.mjs` → `ui/src/lib/theme-core.ts`).
-- `npm run build` — `tsc --noEmit` + Vite build → `ui-build/` (dashboard.html, popup.html, bundled local assets incl. Geist Sans).
+- `npm run build` — `tsc --noEmit` + Vite build → `ui-build/` (dashboard.html, popup.html, bundled local assets incl. Source Sans 3).
 - `npm run check` — builds, then validates JS/manifest least-privilege, icons, no inline/remote resources in `src/` HTML and `ui-build/` HTML.
 - `npm run package` — builds first (`prepackage`), then writes `dist/azure-devops-notifier-<version>.zip` via system `zip` (manifest + `src/` + `assets/` + `ui-build/` only).
-- `node tools/generate-icons.mjs` — regenerates `assets/icons/*.png` (stdlib-only PNG writer).
+- `node tools/generate-icons.mjs` — regenerates the shared teal branch SVG and PNG icons from the official Lucide GitBranch icon using resvg.
 - `node tools/generate-sound.mjs` — regenerates `assets/sounds/notification.wav` (stdlib-only WAV writer: PCM16 mono 22050Hz, ~1.25s soft-decaying bell — 523.25Hz fundamental with inharmonic partials).
 
 ## Install / run

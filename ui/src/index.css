@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --background: 40 30% 97%;
+    --foreground: 30 8% 14%;
+    --card: 40 33% 98%;
+    --card-foreground: 30 8% 14%;
+    --popover: 40 33% 98%;
+    --popover-foreground: 30 8% 14%;
+    --primary: 174 60% 30%;
+    --primary-foreground: 40 40% 97%;
+    --secondary: 36 20% 92%;
+    --secondary-foreground: 30 8% 18%;
+    --muted: 36 18% 93%;
+    --muted-foreground: 30 6% 42%;
+    --accent: 36 22% 91%;
+    --accent-foreground: 30 8% 16%;
+    --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 221 83% 53%;
-    --radius: 0.5rem;
+    --border: 36 16% 86%;
+    --input: 36 16% 86%;
+    --ring: 174 60% 30%;
+    --radius: 0.625rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 5.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 5.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 30 8% 10%;
+    --foreground: 40 25% 92%;
+    --card: 30 8% 13%;
+    --card-foreground: 40 25% 92%;
+    --popover: 30 8% 13%;
+    --popover-foreground: 40 25% 92%;
+    --primary: 174 55% 55%;
+    --primary-foreground: 30 10% 10%;
+    --secondary: 30 6% 18%;
+    --secondary-foreground: 40 25% 92%;
+    --muted: 30 6% 17%;
+    --muted-foreground: 35 8% 60%;
+    --accent: 30 6% 19%;
+    --accent-foreground: 40 25% 92%;
+    --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 217 91% 60%;
+    --border: 30 6% 20%;
+    --input: 30 6% 20%;
+    --ring: 174 55% 55%;
   }
 }
 
@@ -57,6 +57,22 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
+}
+
+/* Chrome sizes action popups intrinsically; viewport-relative caps can collapse it. */
+html[data-surface='popup'],
+html[data-surface='popup'] body {
+  width: 400px;
+  min-width: 400px;
+  margin: 0;
+}
+
+.popup-shell {
+  width: 400px;
+  max-height: 600px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
 }
 
 @media (prefers-reduced-motion: reduce) {

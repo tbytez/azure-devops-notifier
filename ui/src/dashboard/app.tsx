@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, Bell, BellRing, Eye, GitBranch, Settings } from 'lucide-react';
+import { Activity, BellRing, Eye, Settings } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 
 import { NotifierProvider, useNotifier } from '@/src/lib/store';
 import { isDemoMode } from '@/src/lib/bridge';
 import { canRequestDesktopPermission, requestDesktopPermission } from '@/src/lib/notifications';
 import { ThemeToggle } from '@/src/components/theme-toggle';
+import { BrandMark } from '@/src/components/brand-mark';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -90,7 +91,7 @@ function Shell() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="max-w-md space-y-3 text-center">
-          <Bell className="mx-auto h-8 w-8 text-primary" />
+          <BrandMark className="mx-auto h-8 w-8" />
           <h1 className="text-lg font-semibold">Azure DevOps Notifier</h1>
           <p className="text-sm text-muted-foreground">
             This dashboard only works inside the installed Chrome extension. For a preview, open it with <code>?demo=1</code> on a local server.
@@ -104,7 +105,7 @@ function Shell() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="max-w-md space-y-3 text-center">
-          <Bell className="mx-auto h-8 w-8 text-primary" />
+          <BrandMark className="mx-auto h-8 w-8" />
           <h1 className="text-lg font-semibold">Azure DevOps Notifier</h1>
           <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>
           <Button variant="outline" size="sm" onClick={() => { void refresh(); }}>
@@ -151,9 +152,7 @@ function Shell() {
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
       <aside className="flex w-full shrink-0 flex-col border-b bg-card md:w-[220px] md:border-b-0 md:border-r">
         <div className="flex items-center gap-2 border-b px-4 py-3">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <GitBranch className="h-4 w-4" />
-          </span>
+          <BrandMark />
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold leading-tight">Azure DevOps</div>
             <div className="truncate text-[11px] text-muted-foreground leading-tight">Notifier</div>

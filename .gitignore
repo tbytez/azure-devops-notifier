@@ -4,3 +4,4 @@ dist/
 *.log
 .DS_Store
 ui-build/
+design-qa.md

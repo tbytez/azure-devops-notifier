@@ -40,6 +40,9 @@ for (const key of ['background.service_worker', 'action.default_popup', 'options
   if (v) referenced.push(join(ROOT, v));
 }
 for (const iconPath of Object.values(manifest.icons || {})) referenced.push(join(ROOT, iconPath));
+for (const size of ['16', '32', '48', '128']) {
+  check(manifest.action?.default_icon?.[size] === manifest.icons?.[size], `toolbar and extension icons must match at ${size}px`);
+}
 for (const extra of ['src/offscreen.html', 'src/offscreen.js', 'assets/sounds/notification.wav']) {
   referenced.push(join(ROOT, extra));
 }

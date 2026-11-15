@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ExternalLink, Settings, LayoutDashboard, Pause, Play, Bell, BellRing } from 'lucide-react';
+import { ExternalLink, Settings, LayoutDashboard, Pause, Play, BellRing } from 'lucide-react';
 import { toast, Toaster } from '@/components/ui/sonner';
 
 import { NotifierProvider, useNotifier } from '@/src/lib/store';
 import { isDemoMode } from '@/src/lib/bridge';
 import { ThemeToggle } from '@/src/components/theme-toggle';
+import { BrandMark } from '@/src/components/brand-mark';
 import { CategoryBadge } from '@/src/components/bits';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,14 +29,14 @@ function openExtensionPage(page: 'dashboard' | 'settings') {
 function Header({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 shrink-0 text-primary" />
-          <span className="truncate text-sm font-semibold">{title}</span>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <BrandMark />
+        <div className="min-w-0">
+          <span className="block truncate text-sm font-semibold">{title}</span>
+          {sub && <div className="truncate text-[11px] text-muted-foreground">{sub}</div>}
         </div>
-        {sub && <div className="truncate text-[11px] text-muted-foreground">{sub}</div>}
       </div>
-      {right}
+      <span className="shrink-0">{right}</span>
     </div>
   );
 }
@@ -46,7 +47,7 @@ function PopupBody() {
 
   if (unavailable) {
     return (
-      <div className="w-[400px] max-w-[calc(100vw-16px)] space-y-3 p-4">
+      <div className="space-y-3 p-4">
         <Header title="Azure DevOps Notifier" right={<ThemeToggle />} />
         <p className="text-sm text-muted-foreground">
           This popup only works inside the installed Chrome extension.
@@ -60,7 +61,7 @@ function PopupBody() {
 
   if (error && !state) {
     return (
-      <div className="w-[400px] max-w-[calc(100vw-16px)] space-y-3 p-4">
+      <div className="space-y-3 p-4">
         <Header title="Azure DevOps Notifier" right={<ThemeToggle />} />
         <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>
         <Button size="sm" variant="outline" onClick={() => { void refresh(); }}>
@@ -71,7 +72,7 @@ function PopupBody() {
   }
 
   if (loading || !state) {
-    return <div className="w-[400px] p-4 text-sm text-muted-foreground">Loading…</div>;
+    return <div className="p-4 text-sm text-muted-foreground" role="status">Loading…</div>;
   }
 
   const unread = (state.notifications || []).filter((n) => !n.read);
@@ -120,7 +121,7 @@ function PopupBody() {
 
   if (!state.connected) {
     return (
-      <div className="w-[400px] max-w-[calc(100vw-16px)] space-y-3 p-4">
+      <div className="space-y-3 p-4">
         <Header title="Azure DevOps Notifier" right={<ThemeToggle />} />
         {demo && (
           <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
@@ -138,7 +139,7 @@ function PopupBody() {
   }
 
   return (
-    <div className="w-[400px] max-w-[calc(100vw-16px)] space-y-3 p-3">
+    <div className="space-y-3 p-3">
       <Header
         title={state.settings.organization || 'Azure DevOps'}
         sub={`${state.watches.length} watching${state.lastSyncAt ? ` · checked ${timeAgo(state.lastSyncAt)}` : ''}`}
@@ -258,9 +259,11 @@ function PopupBody() {
 
 function PopupApp() {
   return (
-    <NotifierProvider>
-      <PopupBody />
-    </NotifierProvider>
+    <div className="popup-shell">
+      <NotifierProvider>
+        <PopupBody />
+      </NotifierProvider>
+    </div>
   );
 }
 
