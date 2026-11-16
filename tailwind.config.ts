@@ -8,6 +8,14 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Source Sans 3"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', '"SF Mono"', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+      },
+      boxShadow: {
+        xs: 'var(--shadow-xs)',
+        sm: 'var(--shadow-sm)',
+        DEFAULT: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -45,6 +53,12 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        surface: 'hsl(var(--surface))',
+        sunken: 'hsl(var(--sunken))',
+        subtle: 'hsl(var(--subtle-foreground))',
+        success: 'hsl(var(--success))',
+        warning: 'hsl(var(--warning))',
+        'border-strong': 'hsl(var(--border-strong))',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

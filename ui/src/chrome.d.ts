@@ -1,6 +1,7 @@
 interface ChromeRuntimeLike {
   id?: string;
   getURL?: (path: string) => string;
+  getManifest?: () => { version?: string };
 }
 interface ChromePermissionsLike {
   request?: (options: { permissions: string[] }) => Promise<boolean>;

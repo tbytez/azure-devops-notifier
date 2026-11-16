@@ -113,16 +113,64 @@ export const CATEGORY_KEYS = [
 
 export type CategoryKey = (typeof CATEGORY_KEYS)[number];
 
-export const CATEGORY_META: Record<CategoryKey, { label: string; color: string; icon: string }> = {
-  comments: { label: 'Comment', color: '#0284c7', icon: 'MessageSquare' },
-  threads: { label: 'Thread', color: '#7c3aed', icon: 'MessageSquareMore' },
-  reviews: { label: 'Review', color: '#d97706', icon: 'ThumbsUp' },
-  reviewers: { label: 'Reviewers', color: '#db2777', icon: 'Users' },
-  commits: { label: 'Commits', color: '#059669', icon: 'GitCommitHorizontal' },
-  lifecycle: { label: 'Lifecycle', color: '#4f46e5', icon: 'GitPullRequest' },
-  checks: { label: 'Checks', color: '#ea580c', icon: 'CircleCheck' },
-  policies: { label: 'Policies', color: '#0d9488', icon: 'ShieldCheck' },
+export const CATEGORY_META: Record<CategoryKey, { label: string; plural: string; description: string; color: string; tone: string }> = {
+  comments: { label: 'Comment', plural: 'Comments', description: 'New and edited comments', color: 'hsl(var(--cat-comments))', tone: '--cat-comments' },
+  threads: { label: 'Thread', plural: 'Threads', description: 'Threads resolved or reopened', color: 'hsl(var(--cat-threads))', tone: '--cat-threads' },
+  reviews: { label: 'Review', plural: 'Reviews', description: 'Approvals and vote changes', color: 'hsl(var(--cat-reviews))', tone: '--cat-reviews' },
+  reviewers: { label: 'Reviewers', plural: 'Reviewers', description: 'Reviewers added or removed', color: 'hsl(var(--cat-reviewers))', tone: '--cat-reviewers' },
+  commits: { label: 'Commits', plural: 'Commits', description: 'New pushes to the branch', color: 'hsl(var(--cat-commits))', tone: '--cat-commits' },
+  lifecycle: { label: 'Status', plural: 'Status', description: 'Draft, completed or abandoned', color: 'hsl(var(--cat-lifecycle))', tone: '--cat-lifecycle' },
+  checks: { label: 'Checks', plural: 'Checks', description: 'Build and status checks', color: 'hsl(var(--cat-checks))', tone: '--cat-checks' },
+  policies: { label: 'Policies', plural: 'Policies', description: 'Branch policy evaluations', color: 'hsl(var(--cat-policies))', tone: '--cat-policies' },
 };
+
+export function categoryKey(category: string): CategoryKey {
+  return (category in CATEGORY_META ? category : 'comments') as CategoryKey;
+}
+
+export function tint(tone: string, alpha: number): string {
+  return `hsl(var(${tone}) / ${alpha})`;
+}
+
+export type PrState = 'active' | 'draft' | 'completed' | 'abandoned' | 'unknown';
+
+export function prState(w: Pick<PublicWatch, 'status' | 'isDraft'>): PrState {
+  if (w.status === 'completed') return 'completed';
+  if (w.status === 'abandoned') return 'abandoned';
+  if (w.isDraft === true) return 'draft';
+  if (w.status === 'active') return 'active';
+  return 'unknown';
+}
+
+export const PR_STATE_LABEL: Record<PrState, string> = {
+  active: 'Active',
+  draft: 'Draft',
+  completed: 'Completed',
+  abandoned: 'Abandoned',
+  unknown: 'Unknown',
+};
+
+export function initials(name: string | null | undefined): string {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  const first = parts[0][0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] || '' : '';
+  return (first + last).toUpperCase();
+}
+
+export function nameHue(name: string | null | undefined): number {
+  let h = 0;
+  for (const ch of String(name || '')) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return h;
+}
+
+export function greeting(now = new Date()): string {
+  const h = now.getHours();
+  if (h < 5) return 'Working late';
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export function timeAgo(ts: number | null | undefined): string {
   if (!ts) return '';
