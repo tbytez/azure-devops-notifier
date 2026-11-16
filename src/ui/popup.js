@@ -83,7 +83,7 @@ async function init() {
     } else {
       const sync = res.sync || {};
       if (sync.skipped) {
-        showToast(sync.skipped === 'backoff' ? 'Rate limited — next check is already scheduled.' : `Sync skipped (${sync.skipped}).`, true);
+        showToast(sync.skipped === 'backoff' ? 'Rate limited. Next check is already scheduled.' : `Sync skipped (${sync.skipped}).`, true);
       } else if (sync.errors?.global || Object.keys(sync.errors?.items || {}).length) {
         showToast(sync.errors?.global || 'Some pull requests could not be checked.', true);
       }

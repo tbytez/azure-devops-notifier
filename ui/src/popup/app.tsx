@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExternalLink, Settings, LayoutDashboard, Pause, Play, BellRing } from 'lucide-react';
+import { ExternalLink, Settings, LayoutDashboard, Pause, Play, BellRing, Download } from 'lucide-react';
 import { toast, Toaster } from '@/components/ui/sonner';
 
 import { NotifierProvider, useNotifier } from '@/src/lib/store';
@@ -99,7 +99,7 @@ function PopupBody() {
         const gerr = sync?.errors?.global;
         const itemErrs = Object.keys(sync?.errors?.items || {}).length;
         if (gerr || itemErrs) toast.error(gerr || `${itemErrs} pull request${itemErrs > 1 ? 's' : ''} could not be checked.`);
-        else toast.success(added ? `${added} new notification${added > 1 ? 's' : ''}.` : 'Sync complete — nothing new.');
+        else toast.success(added ? `${added} new notification${added > 1 ? 's' : ''}.` : 'Sync complete. Nothing new.');
       }
       await refresh();
     } finally {
@@ -157,6 +157,18 @@ function PopupBody() {
         </p>
       )}
 
+      {state.update?.available && state.update.url && (
+        <a
+          href={state.update.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center gap-2 rounded-md border border-primary/30 bg-primary/[0.06] px-2 py-1.5 text-left text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        >
+          <Download className="h-3.5 w-3.5 shrink-0" />
+          <span className="flex-1">Update available: v{state.update.version}</span>
+        </a>
+      )}
+
       {needDesktopHint && (
         <button
           type="button"
@@ -164,7 +176,7 @@ function PopupBody() {
           className="flex w-full items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-left text-xs text-amber-800 hover:bg-amber-500/20 dark:text-amber-300"
         >
           <BellRing className="h-3.5 w-3.5 shrink-0" />
-          <span className="flex-1">Desktop alerts need Chrome permission — open Settings to allow.</span>
+          <span className="flex-1">Desktop alerts need Chrome permission. Open Settings to allow.</span>
         </button>
       )}
 
@@ -188,7 +200,7 @@ function PopupBody() {
               <span className="min-w-0 flex-1">
                 <span className={cn('block truncate text-xs font-medium', !n.read && 'font-semibold')}>{n.title}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">
-                  #{n.prId} {n.repoName} · {n.projectName} — {n.prTitle || ''}
+                  #{n.prId} {n.repoName} · {n.projectName} · {n.prTitle || ''}
                 </span>
                 <span className="block text-[10px] text-muted-foreground/70">{n.body}</span>
               </span>
@@ -231,7 +243,7 @@ function PopupBody() {
           <p className="py-4 text-center text-xs text-muted-foreground">
             {unread.length === 0 && (state.notifications || []).length > 0
               ? "No unread notifications. You're all caught up."
-              : 'No notifications yet — the first check baselines quietly.'}
+              : 'No notifications yet. The first check baselines quietly.'}
           </p>
         )}
       </div>

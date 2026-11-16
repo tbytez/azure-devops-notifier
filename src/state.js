@@ -36,6 +36,7 @@ export function defaultState() {
     lastSyncAt: null,
     sync: { notBefore: 0, failures: 0 },
     errors: { global: null, items: {} },
+    update: { checkedAt: 0, version: null, url: null, available: false },
   };
 }
 
@@ -110,6 +111,18 @@ function sanitizeNotification(n) {
   };
 }
 
+function sanitizeUpdate(u) {
+  if (!isPlainObject(u)) return { checkedAt: 0, version: null, url: null, available: false };
+  const url = typeof u.url === 'string' && u.url.startsWith('https://github.com/') ? u.url : null;
+  const version = typeof u.version === 'string' && u.version ? u.version.slice(0, 40) : null;
+  return {
+    checkedAt: Number(u.checkedAt) || 0,
+    version,
+    url,
+    available: u.available === true && Boolean(version && url),
+  };
+}
+
 export function migrateState(raw) {
   const d = defaultState();
   if (!isPlainObject(raw)) return d;
@@ -147,6 +160,7 @@ export function migrateState(raw) {
     global: typeof raw.errors?.global === 'string' ? raw.errors.global : null,
     items: isPlainObject(raw.errors?.items) ? raw.errors.items : {},
   };
+  out.update = sanitizeUpdate(raw.update);
   return out;
 }
 
@@ -201,6 +215,7 @@ export function publicState(state, extras = {}) {
       global: s.errors?.global || null,
       items: { ...(s.errors?.items || {}) },
     },
+    update: { ...(s.update || { checkedAt: 0, version: null, url: null, available: false }) },
     ...extras,
   };
 }

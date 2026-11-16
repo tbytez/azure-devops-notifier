@@ -30,7 +30,7 @@
 
   <div id="demo-banner" class="demo-banner hidden">
     <strong>Demo data · not connected.</strong>
-    This preview uses fixture data only — no network calls, no credentials.
+    This preview uses fixture data only. No network calls, no credentials.
     <a id="exit-demo" href="dashboard.html">Exit demo</a>
     <button id="reset-demo" class="link-btn" type="button">Reset demo</button>
   </div>
@@ -65,8 +65,8 @@
               <div class="pat-help">
                 <p class="muted small">Create a PAT at <code>dev.azure.com/{org}/_usersSettings/tokens</code> with scopes:</p>
                 <ul class="scope-list">
-                  <li><strong>Code (Read)</strong> — read pull requests, threads, statuses</li>
-                  <li><strong>Project and Team (Read)</strong> — list projects for scope selection</li>
+                  <li><strong>Code (Read)</strong>: read pull requests, threads, statuses</li>
+                  <li><strong>Project and Team (Read)</strong>: list projects for scope selection</li>
                 </ul>
                 <p class="muted small">The token is stored only in this extension's local Chrome storage (not synced, not encrypted by the OS keychain) and is never sent anywhere except dev.azure.com. Set an expiry on the PAT and revoke it when no longer needed.</p>
               </div>
@@ -112,14 +112,14 @@
         <div id="activity-list" class="card-list"></div>
         <div id="activity-empty" class="empty hidden">
           <p class="empty-title">No notifications yet</p>
-          <p class="muted">The first successful check baselines quietly — new activity appears here afterwards.</p>
+          <p class="muted">The first successful check baselines quietly. New activity appears here afterwards.</p>
         </div>
       </section>
 
       <section id="view-watching" class="view hidden">
         <div class="page-head">
           <h2>Watching</h2>
-          <p class="muted">Pull requests you follow — yours automatically, plus any you add manually.</p>
+          <p class="muted">Pull requests you follow: yours automatically, plus any you add manually.</p>
         </div>
         <div class="card">
           <h3 class="card-title">Watch a pull request</h3>
@@ -186,18 +186,18 @@
             <input id="set-paused" type="checkbox">
             <span>Pause polling (manual “Sync now” still works)</span>
           </label>
-          <p class="muted small">Polling only runs while Chrome is open. Only changes observed between checks are reported — activity between polls may be missed. Checks cover pull request statuses and policy evaluations, not every pipeline run.</p>
+          <p class="muted small">Polling only runs while Chrome is open. Only changes observed between checks are reported, so activity between polls may be missed. Checks cover pull request statuses and policy evaluations, not every pipeline run.</p>
           <label class="check-row">
             <input id="set-desktop" type="checkbox">
             <span>Show desktop notifications</span>
           </label>
-          <p id="desktop-note" class="muted small hidden">Desktop alerts need Chrome's optional “notifications” permission — your OS notification settings may also apply.</p>
+          <p id="desktop-note" class="muted small hidden">Desktop alerts need Chrome's optional “notifications” permission. Your OS notification settings may also apply.</p>
           <button id="desktop-allow" class="btn btn-secondary btn-sm hidden" type="button">Allow desktop alerts</button>
         </div>
 
         <div class="card">
           <h3 class="card-title">Activity types</h3>
-          <p class="muted small">Global defaults — individual watches can override these.</p>
+          <p class="muted small">Global defaults. Individual watches can override these.</p>
           <div id="global-categories" class="cat-grid"></div>
         </div>
 

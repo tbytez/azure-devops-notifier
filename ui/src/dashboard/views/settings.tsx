@@ -7,6 +7,7 @@ import { canRequestDesktopPermission, requestDesktopPermission } from '@/src/lib
 import {
   CATEGORY_KEYS,
   CATEGORY_META,
+  timeAgo,
   type CategoryKey,
   type PublicSettings,
 } from '@/src/lib/types';
@@ -63,6 +64,7 @@ export function SettingsView() {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [soundTesting, setSoundTesting] = useState(false);
   const [soundError, setSoundError] = useState('');
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const accountKeyRef = useRef('');
 
   useEffect(() => {
@@ -115,7 +117,7 @@ export function SettingsView() {
         toast.success('Desktop notifications allowed.');
         await refresh();
       } else {
-        toast.error('Desktop notification permission was denied — alerts stay off until allowed.');
+        toast.error('Desktop notification permission was denied. Alerts stay off until allowed.');
       }
     }
   };
@@ -125,7 +127,7 @@ export function SettingsView() {
     if (granted) {
       toast.success('Desktop notifications allowed.');
     } else {
-      toast.error('Permission was not granted — check Chrome’s notification settings for this extension.');
+      toast.error('Permission was not granted. Check Chrome’s notification settings for this extension.');
     }
     await refresh();
   };
@@ -175,6 +177,23 @@ export function SettingsView() {
     }
   };
 
+  const checkUpdates = async () => {
+    setCheckingUpdate(true);
+    try {
+      const res = await dispatch({ type: 'CHECK_UPDATES' });
+      if (!res?.ok) {
+        toast.error(res?.error || 'Update check failed.');
+      } else if (res.update?.available && res.update?.version) {
+        toast.success(`Version ${res.update.version} is available.`);
+      } else {
+        toast.success('You are on the latest version.');
+      }
+      await refresh();
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
   const disconnect = async () => {
     setConfirmDisconnect(false);
     const res = await dispatch({ type: 'DISCONNECT' });
@@ -208,11 +227,11 @@ export function SettingsView() {
         <CardContent className="space-y-3">
           <div className="text-sm">
             <span className="text-muted-foreground">Organization: </span>
-            <span className="font-medium">{settings.organization || '—'}</span>
+            <span className="font-medium">{settings.organization || 'none'}</span>
           </div>
           <div className="text-sm">
             <span className="text-muted-foreground">Signed in as: </span>
-            <span className="font-medium">{settings.identity?.displayName || '—'}</span>
+            <span className="font-medium">{settings.identity?.displayName || 'none'}</span>
           </div>
           <div className="flex gap-2 pt-1">
             <Button variant="outline" size="sm" onClick={reconnect}>Reconnect</Button>
@@ -295,7 +314,7 @@ export function SettingsView() {
             <Switch checked={draft.paused} onCheckedChange={(v) => update('paused', v)} />
           </label>
           <p className="text-xs text-muted-foreground">
-            Polling only runs while Chrome is open. Only changes observed between checks are reported — activity between polls may be missed. Checks cover pull request statuses and policy evaluations, not every pipeline run.
+            Polling only runs while Chrome is open. Only changes observed between checks are reported, so activity between polls may be missed. Checks cover pull request statuses and policy evaluations, not every pipeline run.
           </p>
           <Separator />
           <div className="space-y-2">
@@ -306,7 +325,7 @@ export function SettingsView() {
             {showDesktopNote && (
               <Alert className="py-2">
                 <AlertDescription className="flex flex-wrap items-center gap-2 text-xs">
-                  <span>Desktop alerts need Chrome's optional “notifications” permission — your OS notification settings may also apply.</span>
+                  <span>Desktop alerts need Chrome's optional “notifications” permission. Your OS notification settings may also apply.</span>
                   {!isDemoMode() && (
                     <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={allowDesktop}>
                       Allow desktop alerts
@@ -338,7 +357,7 @@ export function SettingsView() {
       <Card>
         <CardHeader>
           <CardTitle>Activity types</CardTitle>
-          <CardDescription>Global defaults — individual watches can override these.</CardDescription>
+          <CardDescription>Global defaults. Individual watches can override these.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -360,6 +379,39 @@ export function SettingsView() {
               );
             })}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Extension updates</CardTitle>
+          <CardDescription>
+            Chrome does not auto-update unpacked extensions, so the extension checks GitHub Releases every 12 hours and shows a download link when a newer version exists.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={checkUpdates} disabled={checkingUpdate}>
+              {checkingUpdate ? 'Checking…' : 'Check now'}
+            </Button>
+            {state.update?.available && state.update.url ? (
+              <a
+                href={state.update.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+              >
+                v{state.update.version} available on GitHub
+              </a>
+            ) : state.update?.checkedAt ? (
+              <span className="text-xs text-muted-foreground">Up to date · checked {timeAgo(state.update.checkedAt)}</span>
+            ) : (
+              <span className="text-xs text-muted-foreground">Not checked yet.</span>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            To update, download the latest ZIP and extract it over your existing extension folder, then click Reload on chrome://extensions. Your setup carries over.
+          </p>
         </CardContent>
       </Card>
 

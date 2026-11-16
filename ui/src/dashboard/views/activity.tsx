@@ -55,7 +55,7 @@ function FeedItem({
         <span className="ml-auto shrink-0 text-[12.5px] text-muted-foreground">{timeAgo(n.createdAt)}</span>
       </div>
       <div className="mt-0.5 text-[13.5px] text-muted-foreground">
-        #{n.prId} {n.repoName} · {n.projectName} — {n.prTitle}{n.actorName ? ` · ${n.actorName}` : ''}
+        #{n.prId} {n.repoName} · {n.projectName} · {n.prTitle}{n.actorName ? ` · ${n.actorName}` : ''}
       </div>
       {selected && (
         <div className="mt-3 rounded-lg border bg-card/60 p-4 sm:p-5" onClick={(e) => e.stopPropagation()}>
@@ -244,7 +244,7 @@ export function ActivityView() {
           <p className="max-w-sm text-sm text-muted-foreground">
             {hasFilters
               ? 'Try clearing the search or filters.'
-              : 'The first successful check baselines quietly — new activity appears here afterwards.'}
+              : 'The first successful check baselines quietly. New activity appears here afterwards.'}
           </p>
         </div>
       )}
@@ -254,7 +254,7 @@ export function ActivityView() {
       {Object.keys(state?.errors?.items || {}).length > 0 && (
         <p className="mt-4 text-xs text-muted-foreground">
           <Badge variant="outline" className="mr-1">{Object.keys(state?.errors?.items || {}).length}</Badge>
-          pull request{Object.keys(state?.errors?.items || {}).length > 1 ? 's' : ''} could not be checked — see Watching for details.
+          pull request{Object.keys(state?.errors?.items || {}).length > 1 ? 's' : ''} could not be checked. See Watching for details.
         </p>
       )}
     </div>

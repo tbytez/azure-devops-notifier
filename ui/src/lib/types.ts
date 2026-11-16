@@ -51,6 +51,13 @@ export interface PublicSettings {
   ignoreSelf: boolean;
 }
 
+export interface PublicUpdate {
+  checkedAt: number;
+  version: string | null;
+  url: string | null;
+  available: boolean;
+}
+
 export interface PublicState {
   connected: boolean;
   settings: PublicSettings;
@@ -62,6 +69,7 @@ export interface PublicState {
   lastSyncAt: number | null;
   syncNotBefore: number;
   errors: { global: string | null; items: Record<string, string> };
+  update?: PublicUpdate;
   desktopPermission?: boolean;
   demo?: boolean;
 }
@@ -84,6 +92,7 @@ export interface BridgeResponse {
   };
   settings?: PublicSettings;
   unreadCount?: number;
+  update?: PublicUpdate | null;
 }
 
 export interface Bridge {

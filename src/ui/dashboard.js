@@ -179,7 +179,7 @@ function renderActivity() {
         h('div', { class: 'notif-pr muted' },
           h('span', { class: 'pr-id', text: `#${n.prId}` }),
           h('span', { text: `${n.repoName} · ${n.projectName}` }),
-          n.prTitle ? h('span', { class: 'pr-title', text: ` — ${n.prTitle}` }) : null)),
+          n.prTitle ? h('span', { class: 'pr-title', text: ` · ${n.prTitle}` }) : null)),
       !n.read ? h('button', {
         class: 'btn btn-ghost btn-sm',
         type: 'button',
@@ -244,7 +244,7 @@ async function startConnect() {
   }
   $('conn-token').value = '';
   const pending = res.pending;
-  $('connect-identity').textContent = `Signed in as ${pending.identity.displayName} — choose which projects to watch.`;
+  $('connect-identity').textContent = `Signed in as ${pending.identity.displayName}. Choose which projects to watch.`;
   const wrap = $('connect-projects');
   wrap.textContent = '';
   for (const p of pending.projects) {
@@ -381,8 +381,8 @@ function renderSettings() {
   const org = state.settings.organization;
   const ident = state.settings.identity;
   $('account-info').append(
-    h('p', {}, h('strong', { text: 'Organization: ' }), org || '—'),
-    h('p', { class: 'muted' }, h('strong', { text: 'Signed in as: ' }), ident?.displayName || '—'));
+    h('p', {}, h('strong', { text: 'Organization: ' }), org || 'none'),
+    h('p', { class: 'muted' }, h('strong', { text: 'Signed in as: ' }), ident?.displayName || 'none'));
 
   const picker = $('project-picker');
   picker.textContent = '';
@@ -518,8 +518,8 @@ async function init() {
         const sync = res.sync || {};
         if (sync.skipped) {
           const msgs = {
-            paused: 'Polling is paused — resume it in Settings for automatic checks.',
-            backoff: 'Azure DevOps asked us to slow down — the next check is already scheduled.',
+            paused: 'Polling is paused. Resume it in Settings for automatic checks.',
+            backoff: 'Azure DevOps asked us to slow down. The next check is already scheduled.',
             disconnected: 'Not connected to Azure DevOps.',
           };
           showToast(msgs[sync.skipped] || `Sync skipped (${sync.skipped}).`, true);
@@ -528,9 +528,9 @@ async function init() {
           const gerr = sync.errors?.global;
           const itemErrCount = Object.keys(sync.errors?.items || {}).length;
           if (gerr || itemErrCount) {
-            showToast(gerr || `${itemErrCount} pull request${itemErrCount > 1 ? 's' : ''} could not be checked — see the error notes.`, true);
+            showToast(gerr || `${itemErrCount} pull request${itemErrCount > 1 ? 's' : ''} could not be checked. See the error notes.`, true);
           } else {
-            showToast(added ? `${added} new notification${added > 1 ? 's' : ''}.` : 'Sync complete — nothing new.');
+            showToast(added ? `${added} new notification${added > 1 ? 's' : ''}.` : 'Sync complete. Nothing new.');
           }
         }
       }
@@ -548,7 +548,7 @@ async function init() {
         $('desktop-note').classList.add('hidden');
         $('desktop-allow').classList.add('hidden');
       } else {
-        showToast('Desktop notification permission was denied — alerts stay off until allowed in Settings.', true);
+        showToast('Desktop notification permission was denied. Alerts stay off until allowed in Settings.', true);
       }
     }
   });
@@ -558,7 +558,7 @@ async function init() {
       state.desktopPermission = true;
       showToast('Desktop notifications allowed.');
     } else {
-      showToast('Permission was not granted — check Chrome’s notification settings for this extension.', true);
+      showToast('Permission was not granted. Check Chrome’s notification settings for this extension.', true);
     }
     if (view === 'settings') renderSettings();
   });

@@ -243,7 +243,7 @@ export function WatchingView() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Pull requests you follow — yours automatically, plus any you add manually.
+        Pull requests you follow: yours automatically, plus any you add manually.
       </p>
 
       <Card>

@@ -69,7 +69,7 @@ export function ConnectView({ onConnected }: { onConnected: () => void }) {
     setPhase('idle');
     setPending(null);
     if (desktopOn && wantDesktop && !permGranted) {
-      toast.error('Chrome declined desktop notification permission — you can allow it later in Settings.');
+      toast.error('Chrome declined desktop notification permission. You can allow it later in Settings.');
     }
     toast.success('Connected. First sync will baseline quietly.');
     await refresh();
@@ -99,7 +99,7 @@ export function ConnectView({ onConnected }: { onConnected: () => void }) {
           <CardTitle>{phase === 'selecting' || phase === 'confirming' ? 'Choose projects to watch' : 'Connect your organization'}</CardTitle>
           <CardDescription>
             {phase === 'selecting' || phase === 'confirming'
-              ? `Signed in as ${pending?.identity.displayName || ''} — pick which projects to watch.`
+              ? `Signed in as ${pending?.identity.displayName || ''}. Pick which projects to watch.`
               : 'Azure DevOps Notifier watches pull requests on Azure DevOps Services (dev.azure.com) and notifies you about comments, reviews, checks and more. Azure DevOps Server (on-premises) is not supported.'}
           </CardDescription>
         </CardHeader>
@@ -129,7 +129,7 @@ export function ConnectView({ onConnected }: { onConnected: () => void }) {
                   disabled={phase === 'connecting'}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Create a PAT at dev.azure.com/{'{org}'}/_usersSettings/tokens with scopes: <strong>Code (Read)</strong> — read pull requests, threads, statuses; <strong>Project and Team (Read)</strong> — list projects for scope selection.
+                  Create a PAT at dev.azure.com/{'{org}'}/_usersSettings/tokens with scopes: <strong>Code (Read)</strong> to read pull requests, threads, statuses; <strong>Project and Team (Read)</strong> to list projects for scope selection.
                 </p>
                 <p className="text-xs text-muted-foreground">
                   The token is stored only in this extension's local Chrome storage (not synced, not encrypted by the OS keychain) and is never sent anywhere except dev.azure.com. Set an expiry on the PAT and revoke it when no longer needed.

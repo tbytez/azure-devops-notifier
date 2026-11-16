@@ -81,7 +81,7 @@ function harness(state, api, extra = {}) {
   };
 }
 
-test('first poll baselines quietly — no notifications for existing activity', async () => {
+test('first poll baselines quietly: no notifications for existing activity', async () => {
   const w = makeWatch();
   const state = makeState([w]);
   const api = makeApi({

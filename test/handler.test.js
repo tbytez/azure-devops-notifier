@@ -235,7 +235,7 @@ test('SAVE_SETTINGS rejects unknown fields and bad values', async () => {
   assert.equal(s.settings.paused, true);
 });
 
-test('mutations serialize with polling — no lost updates', async () => {
+test('mutations serialize with polling: no lost updates', async () => {
   const h = harness();
   await connect(h);
   const s0 = await h.store.load();
@@ -279,7 +279,7 @@ test('migrateState drops malformed watches and caps notifications', () => {
   assert.equal(s.notifications.length, 300);
 });
 
-test('WATCH_PR duplicate add is idempotent — retains prefs, snapshot, origin, addedAt', async () => {
+test('WATCH_PR duplicate add is idempotent: retains prefs, snapshot, origin, addedAt', async () => {
   const h = harness();
   await connect(h);
   const url = 'https://dev.azure.com/contoso/Alpha/_git/webapp/pullrequest/42';

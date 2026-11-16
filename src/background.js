@@ -3,8 +3,12 @@ import { runPoll } from './sync.js';
 import { createHandler } from './handler.js';
 import { createApi } from './api.js';
 import { createSoundPlayer, AUDIO_TARGET } from './sound.js';
+import { checkLatestRelease, isNewerVersion } from './update.js';
 
 const ALARM_NAME = 'azdo-poll';
+const UPDATE_ALARM = 'azdo-update-check';
+const UPDATE_PERIOD_MINUTES = 12 * 60;
+const UPDATE_MIN_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 function log(...args) {
   console.log('[azdo-notifier]', ...args);
@@ -24,7 +28,7 @@ async function refreshBadge(chromeApi) {
     if (unread) parts.push(`${unread} unread`);
     if (pub.lastSyncAt) parts.push(`checked ${new Date(pub.lastSyncAt).toLocaleTimeString()}`);
     if (pub.errors.global) parts.push(`error: ${pub.errors.global}`);
-    await chromeApi.action.setTitle({ title: parts.join(' — ') });
+    await chromeApi.action.setTitle({ title: parts.join(' · ') });
   } catch (e) {
     log('badge refresh failed', e?.message || e);
   }
@@ -47,6 +51,15 @@ async function scheduleAlarm(chromeApi) {
   }
 }
 
+async function scheduleUpdateAlarm(chromeApi) {
+  try {
+    const existing = await chromeApi.alarms.get(UPDATE_ALARM);
+    if (!existing) await chromeApi.alarms.create(UPDATE_ALARM, { periodInMinutes: UPDATE_PERIOD_MINUTES });
+  } catch (e) {
+    log('update alarm schedule failed', e?.message || e);
+  }
+}
+
 async function hasNotificationPermission(chromeApi) {
   try {
     return await chromeApi.permissions.contains({ permissions: ['notifications'] });
@@ -59,7 +72,7 @@ async function emitDesktopNotification(chromeApi, state, notif) {
   if (!state.settings?.desktopEnabled) return;
   const granted = await hasNotificationPermission(chromeApi);
   if (!granted) return;
-  const title = `${notif.title} — ${notif.prTitle || `PR #${notif.prId}`}`;
+  const title = `${notif.title} · ${notif.prTitle || `PR #${notif.prId}`}`;
   const message = [notif.body, notif.repoName, notif.projectName].filter(Boolean).join(' · ').slice(0, 300);
   try {
     await chromeApi.notifications?.create?.(notif.id, {
@@ -103,10 +116,33 @@ function registerNotificationClick(chromeApi) {
   notifClickApi = chromeApi;
 }
 
-function init(chromeApi) {
+function init(chromeApi, deps = {}) {
   chromeApiRef = chromeApi;
   store = createStorageState(chromeApi.storage.local);
   const soundPlayer = createSoundPlayer(chromeApi);
+  const fetchImpl = deps.fetchImpl || globalThis.fetch?.bind(globalThis);
+  const now = deps.now || (() => Date.now());
+
+  const runUpdateCheckOp = async ({ forced = false } = {}) => {
+    const state = await store.load();
+    const prev = state.update || {};
+    if (!forced && prev.checkedAt && now() - prev.checkedAt < UPDATE_MIN_INTERVAL_MS) {
+      return { skipped: 'fresh', update: prev };
+    }
+    let latest = null;
+    try {
+      latest = await checkLatestRelease(fetchImpl);
+    } catch (e) {
+      log('update check request failed', e?.message || e);
+    }
+    const current = chromeApi.runtime.getManifest?.()?.version;
+    state.update = latest
+      ? { checkedAt: now(), version: latest.version, url: latest.url, available: isNewerVersion(latest.version, current) }
+      : { ...prev, checkedAt: now() };
+    await store.save(state);
+    return { update: state.update };
+  };
+
   try {
     const p = chromeApi.storage.local.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
     p?.catch?.(() => {});
@@ -141,15 +177,24 @@ function init(chromeApi) {
     afterMutation: () => refreshBadge(chromeApi),
     hasNotificationPermission: () => hasNotificationPermission(chromeApi),
     playSound: () => soundPlayer.play(),
+    checkUpdates: runUpdateCheckOp,
   });
 
   chromeApi.runtime.onInstalled.addListener(() => {
     scheduleAlarm(chromeApi).then(() => refreshBadge(chromeApi));
+    scheduleUpdateAlarm(chromeApi);
+    handler.enqueue(() => runUpdateCheckOp()).catch(() => {});
   });
   chromeApi.runtime.onStartup.addListener(() => {
     scheduleAlarm(chromeApi).then(() => refreshBadge(chromeApi));
+    scheduleUpdateAlarm(chromeApi);
+    handler.enqueue(() => runUpdateCheckOp()).catch(() => {});
   });
   chromeApi.alarms.onAlarm.addListener((alarm) => {
+    if (alarm?.name === UPDATE_ALARM) {
+      handler.enqueue(() => runUpdateCheckOp()).catch((e) => log('update check failed', e?.message || e));
+      return;
+    }
     if (alarm?.name !== ALARM_NAME) return;
     handler.enqueue(() => runPollOp({ forced: false })).catch((e) => log('poll failed', e?.message || e));
     refreshBadge(chromeApi);
@@ -170,6 +215,7 @@ function init(chromeApi) {
   });
 
   scheduleAlarm(chromeApi).then(() => refreshBadge(chromeApi));
+  scheduleUpdateAlarm(chromeApi);
 }
 
 const chromeApi = globalThis.chrome;
@@ -177,4 +223,4 @@ if (chromeApi?.runtime?.onInstalled && !globalThis.AZDO_EXTENSION_TEST) {
   init(chromeApi);
 }
 
-export { init, refreshBadge, scheduleAlarm, ALARM_NAME };
+export { init, refreshBadge, scheduleAlarm, ALARM_NAME, UPDATE_ALARM };

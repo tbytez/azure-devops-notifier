@@ -241,7 +241,7 @@ test('eventEnabled honors per-watch override and global settings', () => {
   assert.deepEqual(Object.keys(effectiveEventTypes({ eventTypes: null }, settings)), CATEGORIES);
 });
 
-test('comment ids are scoped per thread — same id in two threads coexist', () => {
+test('comment ids are scoped per thread: same id in two threads coexist', () => {
   const data = prData({
     threads: { value: [
       thread(1, 'active', [comment(1, 'first thread comment', { id: 'a', displayName: 'A' })]),

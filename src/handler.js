@@ -72,6 +72,7 @@ export function createHandler(deps) {
     afterMutation,
     hasNotificationPermission,
     playSound,
+    checkUpdates,
     now = () => Date.now(),
   } = deps;
 
@@ -366,6 +367,12 @@ export function createHandler(deps) {
         return mutate(async () => {
           const result = await runPoll({ forced: true });
           return ok({ sync: result });
+        });
+      case 'CHECK_UPDATES':
+        return enqueue(async () => {
+          if (typeof checkUpdates !== 'function') return fail('Update check is not available in this context.');
+          const result = await checkUpdates({ forced: true });
+          return ok({ update: result?.update || null });
         });
       case 'TEST_SOUND':
         return enqueue(async () => {

@@ -29,7 +29,7 @@ const DEMO_PRS = [
     threads: [
       { id: 1, status: 'active', comments: [
         { id: 11, content: 'Can we add a fallback for guests?', lastUpdatedDate: '2026-11-14T09:12:00Z', publishedDate: '2026-11-14T09:12:00Z', author: { id: 'demo-rev-1', displayName: 'Priya Natarajan' }, commentType: 'text' },
-        { id: 12, content: 'Good catch — added a guest path in the latest push.', lastUpdatedDate: '2026-11-14T10:40:00Z', publishedDate: '2026-11-14T10:40:00Z', author: { id: 'demo-user-id', displayName: 'Demo User' }, commentType: 'text' },
+        { id: 12, content: 'Good catch, added a guest path in the latest push.', lastUpdatedDate: '2026-11-14T10:40:00Z', publishedDate: '2026-11-14T10:40:00Z', author: { id: 'demo-user-id', displayName: 'Demo User' }, commentType: 'text' },
       ]},
       { id: 2, status: 'fixed', comments: [
         { id: 21, content: 'Token refresh looks solid now.', lastUpdatedDate: '2026-11-13T16:00:00Z', publishedDate: '2026-11-13T16:00:00Z', author: { id: 'demo-rev-2', displayName: 'Marcus Webb' }, commentType: 'text' },
@@ -275,6 +275,7 @@ export function createDemoBridge() {
     onStateChanged: async () => {},
     hasNotificationPermission: async () => true,
     playSound: () => demoPlaySound(),
+    checkUpdates: async () => ({ update: { checkedAt: Date.now(), version: null, url: null, available: false } }),
   });
 
   return {

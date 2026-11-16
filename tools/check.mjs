@@ -12,7 +12,7 @@ check(manifest.manifest_version === 3, 'manifest_version must be 3');
 check(!manifest.permissions?.includes('tabs'), 'tabs permission must not be requested');
 check(!manifest.permissions?.includes('cookies'), 'cookies permission must not be requested');
 check(!manifest.permissions?.includes('webRequest'), 'webRequest must not be requested');
-check(JSON.stringify(manifest.host_permissions) === JSON.stringify(['https://dev.azure.com/*']), 'host_permissions must be exactly ["https://dev.azure.com/*"]');
+check(JSON.stringify(manifest.host_permissions) === JSON.stringify(['https://dev.azure.com/*', 'https://api.github.com/*']), 'host_permissions must be exactly ["https://dev.azure.com/*", "https://api.github.com/*"]');
 check((manifest.optional_permissions || []).join(',') === 'notifications', 'optional_permissions should be ["notifications"]');
 check(manifest.content_security_policy?.extension_pages?.includes("script-src 'self'"), 'CSP must restrict script-src to self');
 check(manifest.background?.type === 'module', 'background must be an ES module service worker');
@@ -80,7 +80,7 @@ const collectHtml = (dir) => {
 };
 collectHtml(join(ROOT, 'src'));
 const uiBuildDir = join(ROOT, 'ui-build');
-check(existsSync(uiBuildDir), 'ui-build/ missing — run npm run build first');
+check(existsSync(uiBuildDir), 'ui-build/ missing: run npm run build first');
 if (existsSync(uiBuildDir)) collectHtml(uiBuildDir);
 for (const html of htmlFiles) {
   const text = readFileSync(html, 'utf8');
@@ -177,4 +177,4 @@ if (failures.length) {
   for (const f of failures) console.error(' -', f);
   process.exit(1);
 }
-console.log(`check OK — ${htmlFiles.length} html, ${srcFiles.length} js files, manifest + icons verified`);
+console.log(`check OK: ${htmlFiles.length} html, ${srcFiles.length} js files, manifest + icons verified`);

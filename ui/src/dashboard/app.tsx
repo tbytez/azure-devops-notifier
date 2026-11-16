@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BellRing, Eye, Inbox, Settings } from 'lucide-react';
+import { BellRing, Download, Eye, Inbox, Settings } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 
 import { NotifierProvider, useNotifier } from '@/src/lib/store';
@@ -62,9 +62,9 @@ function Shell() {
       if (!res?.ok) {
         toast.error(res?.error || 'Sync failed.');
       } else if (sync?.skipped === 'paused') {
-        toast.error('Polling is paused — resume it in Settings for automatic checks.');
+        toast.error('Polling is paused. Resume it in Settings for automatic checks.');
       } else if (sync?.skipped === 'backoff') {
-        toast.error('Azure DevOps asked us to slow down — the next check is already scheduled.');
+        toast.error('Azure DevOps asked us to slow down. The next check is already scheduled.');
       } else if (sync?.skipped === 'disconnected') {
         toast.error('Not connected to Azure DevOps.');
       } else if (sync?.skipped) {
@@ -76,7 +76,7 @@ function Shell() {
         if (gerr || itemErrs) {
           toast.error(gerr || `${itemErrs} pull request${itemErrs > 1 ? 's' : ''} could not be checked.`);
         } else {
-          toast.success(added ? `${added} new notification${added > 1 ? 's' : ''}.` : 'Sync complete — nothing new.');
+          toast.success(added ? `${added} new notification${added > 1 ? 's' : ''}.` : 'Sync complete. Nothing new.');
         }
       }
       await refresh();
@@ -141,7 +141,7 @@ function Shell() {
     if (granted) {
       toast.success('Desktop notifications allowed.');
     } else {
-      toast.error('Permission was not granted — check Chrome’s notification settings for this extension.');
+      toast.error('Permission was not granted. Check Chrome’s notification settings for this extension.');
     }
     await refresh();
   };
@@ -175,6 +175,18 @@ function Shell() {
             ))}
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            {state.update?.available && state.update.url && (
+              <a
+                href={state.update.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Version ${state.update.version} is available on GitHub`}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+              >
+                <Download className="h-3.5 w-3.5" />
+                v{state.update.version}
+              </a>
+            )}
             {connected && (
               <span className="hidden text-[13px] text-muted-foreground lg:block">{org} · {ident?.displayName || 'connected'}</span>
             )}
@@ -190,7 +202,7 @@ function Shell() {
       {demo && (
         <div className="flex items-center justify-between gap-3 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm">
           <span className="font-medium text-amber-700 dark:text-amber-400">
-            Demo data · not connected — fixture data only, no network calls or credentials.
+            Demo data · not connected · fixture data only, no network calls or credentials.
           </span>
           <Button variant="ghost" size="sm" onClick={() => { window.location.href = window.location.pathname; }}>
             Exit demo
@@ -214,7 +226,7 @@ function Shell() {
         <div className="flex flex-wrap items-center gap-2 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm md:px-6">
           <BellRing className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <span className="text-amber-800 dark:text-amber-300">
-            Desktop alerts are on but Chrome hasn’t granted the notifications permission — your OS notification settings may also apply.
+            Desktop alerts are on but Chrome hasn’t granted the notifications permission. Your OS notification settings may also apply.
           </span>
           {canRequestDesktopPermission() && (
             <Button variant="outline" size="sm" className="ml-auto h-7 px-2 text-xs" onClick={allowDesktop}>
