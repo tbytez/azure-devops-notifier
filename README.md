@@ -18,13 +18,13 @@ Requires Chrome 116+ and Node.js 22.18+.
 4. Choose projects to discover your PRs and review requests automatically, or leave them unchecked and add individual PR URLs manually.
 5. Configure activity types and the polling interval in **Settings**. You can also set preferences per watched PR.
 
-For a prebuilt version, download the ZIP from [Releases](https://github.com/tbytez/azure-devops-notifier/releases), extract it, and start at step 2.
+For a prebuilt version, [download azure-devops-notifier.zip](https://github.com/tbytez/azure-devops-notifier/releases/latest/download/azure-devops-notifier.zip), extract it, and start at step 2.
 
 ## Updates
 
 The extension checks GitHub Releases every 12 hours and shows a download link in the dashboard and popup when a newer version exists. Settings → **Extension updates** → **Check now** runs it manually. This check is read-only and anonymous: it fetches `releases/latest` from `api.github.com` and nothing is sent out.
 
-To update, download the latest ZIP, extract it over your existing extension folder, and click **Reload** on `chrome://extensions`. Your setup (organization, PAT, watches, history) carries over because the extension pins a fixed `key` in the manifest, which keeps its ID stable no matter where the folder lives.
+To update, use the same download link to get the latest `azure-devops-notifier.zip`, extract it over your existing extension folder, and click **Reload** on `chrome://extensions`. Your setup (organization, PAT, watches, history) carries over because the extension pins a fixed `key` in the manifest, which keeps its ID stable no matter where the folder lives.
 
 Note: upgrading to **v0.1.2** changes the extension ID once (the `key` is new in this version), so this one update requires setup again. Every update after that keeps your setup.
 
