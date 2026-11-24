@@ -232,6 +232,7 @@ export async function runPoll(deps) {
 
   const addedNotifications = discovery.notifications || [];
   state.notifications.unshift(...addedNotifications);
+  const notificationsById = new Map(state.notifications.map((notification) => [notification.id, notification]));
   for (const r of results) {
     if (!r || r.error || !r.data) continue;
     const failedCats = subFailuresToCategories(r.failedSubs || new Set());
@@ -241,8 +242,18 @@ export async function runPoll(deps) {
     }
     const prev = state.snapshots[r.key] || null;
     const isBaseline = !prev;
-    const { snapshot, events } = diffPr(r.key, prev, r.data, { now, failed: failedCats });
+    const { snapshot, events, commentPreviewUpdates } = diffPr(r.key, prev, r.data, {
+      now,
+      failed: failedCats,
+      identity: state.settings.identity,
+    });
     state.snapshots[r.key] = snapshot;
+    for (const [id, { original, unresolved, preview }] of commentPreviewUpdates) {
+      const notification = notificationsById.get(id);
+      if (notification && (notification.body === original || notification.body === unresolved)) {
+        notification.body = preview;
+      }
+    }
     const pr = r.data.pr || {};
     if (typeof pr.status === 'string') r.watch.status = pr.status;
     if (typeof pr.isDraft === 'boolean') r.watch.isDraft = pr.isDraft;

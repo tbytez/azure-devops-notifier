@@ -95,6 +95,45 @@ test('first poll baselines quietly: no notifications for existing activity', asy
   assert.equal(state.notifications.length, 0);
 });
 
+test('comment mentions use display names and saved previews are repaired quietly', async () => {
+  const w = makeWatch();
+  const state = makeState([w]);
+  const reviewerId = 'aabbccdd-0000-1111-2222-333344445555';
+  const guestId = '12345678-1111-2222-3333-444455556666';
+  const unknownId = '87654321-1111-2222-3333-444455556666';
+  const content = `@<${reviewerId.toUpperCase()}> @<${guestId}> @<${unknownId}> please review ${'x'.repeat(150)}`;
+  const comments = [];
+  const api = makeApi({
+    getPullRequest: async () => prPayload({ reviewers: [{ id: reviewerId, displayName: 'Alex Reviewer' }] }),
+    getThreads: async () => [{
+      id: 1,
+      status: 'active',
+      identities: { [guestId]: { displayName: 'Sam Guest' } },
+      comments,
+    }],
+  });
+  const h = harness(state, api);
+  await runPoll(h.deps);
+  comments.push({ id: 1, content, author: { id: 'author', displayName: 'Pat' } });
+  const { added } = await runPoll(h.deps);
+  const preview = '@Alex Reviewer @Sam Guest @Unknown user please review '.padEnd(139, 'x') + '…';
+  assert.equal(added[0].body, preview);
+  assert.equal(state.snapshots[w.key].comments['1:1'].hash, content);
+
+  const saved = state.notifications[0];
+  saved.body = `${content.slice(0, 139)}…`;
+  saved.read = true;
+  assert.deepEqual((await runPoll(h.deps)).added, []);
+  assert.equal(saved.body, preview);
+  assert.equal(saved.read, true);
+
+  comments[0].content = `Thanks @<${guestId}>!`;
+  const [edited] = (await runPoll(h.deps)).added;
+  assert.equal(edited.title, 'Comment edited');
+  assert.equal(edited.body, 'Thanks @Sam Guest!');
+  assert.equal(saved.body, preview);
+});
+
 test('new comment after baseline produces one notification', async () => {
   const w = makeWatch();
   const state = makeState([w]);

@@ -98,11 +98,37 @@ function latestByDateThenId(list, dateFn, idFn) {
   return best;
 }
 
-function normalizeThreads(threadsData) {
+function commentIdentities(threads, pr, identity) {
+  const names = new Map();
+  const add = (person, key) => {
+    const name = str(person?.displayName).trim();
+    if (!name) return;
+    for (const id of [key, person.id]) {
+      if (typeof id === 'string' && id) names.set(id.toLowerCase(), name);
+    }
+  };
+  add(identity);
+  add(pr?.createdBy);
+  for (const reviewer of Array.isArray(pr?.reviewers) ? pr.reviewers : []) add(reviewer);
+  for (const thread of threads) {
+    for (const comment of Array.isArray(thread?.comments) ? thread.comments : []) add(comment?.author);
+    for (const [id, person] of Object.entries(thread?.identities || {})) add(person, id);
+  }
+  return names;
+}
+
+function commentPreview(content, names) {
+  // Azure DevOps Markdown stores mentions as @<userID>.
+  return excerpt(content.replace(/@<([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})>/gi,
+    (_, id) => `@${names?.get(id.toLowerCase()) || 'Unknown user'}`));
+}
+
+function normalizeThreads(threadsData, pr, identity) {
   const threads = {};
   const comments = {};
   const list = Array.isArray(threadsData?.value) ? threadsData.value : null;
   if (!list) return { threads, comments, ok: false };
+  const names = commentIdentities(list, pr, identity);
   for (const t of list) {
     if (!t || t.id == null) continue;
     const tid = String(t.id);
@@ -121,6 +147,7 @@ function normalizeThreads(threadsData) {
         authorName: str(author.displayName) || str(author.uniqueName) || 'Unknown',
         updated,
         hash: str(c.content),
+        preview: commentPreview(str(c.content), names),
       };
     }
   }
@@ -236,7 +263,7 @@ function makeEvent(prKey, category, entityKey, revision, fields) {
   };
 }
 
-function diffComments(prKey, prev, next, events, revs) {
+function diffComments(prKey, prev, next, events, revs, commentPreviewUpdates) {
   const p = prev.comments || {};
   const n = next.comments || {};
   const snap = {};
@@ -258,7 +285,7 @@ function diffComments(prKey, prev, next, events, revs) {
         actorName: c.authorName,
         title: 'New comment',
         target: { filePath: c.filePath },
-        body: excerpt(c.hash),
+        body: c.preview,
       }));
       rec.rev = rev;
     } else {
@@ -270,11 +297,17 @@ function diffComments(prKey, prev, next, events, revs) {
           actorName: c.authorName,
           title: 'Comment edited',
           target: { filePath: c.filePath },
-          body: excerpt(c.hash),
+          body: c.preview,
         }));
         rec.rev = rev;
       } else {
         rec.rev = old.rev || revs.revisions[`comment:${cid}`] || 1;
+        const original = excerpt(c.hash);
+        if (c.preview !== original) {
+          commentPreviewUpdates.set(`${prKey}|comments|comment:${cid}|${rec.rev}`, {
+            original, unresolved: commentPreview(c.hash), preview: c.preview,
+          });
+        }
       }
     }
     snap[cid] = rec;
@@ -568,7 +601,8 @@ export function diffPr(prKey, prevSnapshot, data, ctx = {}) {
   const events = [];
   const pr = data?.pr && typeof data.pr === 'object' ? data.pr : null;
 
-  const normThreads = normalizeThreads(data?.threads);
+  const commentPreviewUpdates = new Map();
+  const normThreads = normalizeThreads(data?.threads, pr, ctx.identity);
   const normReviewers = normalizeReviewers(pr);
   const normLifecycle = pr ? normalizeLifecycle(pr) : {};
   const normCommits = pr ? normalizeCommits(pr) : null;
@@ -590,7 +624,7 @@ export function diffPr(prKey, prevSnapshot, data, ctx = {}) {
   } else {
     const evComments = [];
     const evThreads = [];
-    snapshot.comments = diffComments(prKey, prev, { comments: normThreads.comments }, evComments, snapshot);
+    snapshot.comments = diffComments(prKey, prev, { comments: normThreads.comments }, evComments, snapshot, commentPreviewUpdates);
     snapshot.threads = diffThreads(prKey, prev, { threads: normThreads.threads }, evThreads, snapshot);
     if (initFlags.comments) events.push(...evComments);
     if (initFlags.threads) events.push(...evThreads);
@@ -643,5 +677,5 @@ export function diffPr(prKey, prevSnapshot, data, ctx = {}) {
 
   snapshot.init = nextInit;
   snapshot.observedAt = now;
-  return { snapshot, events };
+  return { snapshot, events, commentPreviewUpdates };
 }
