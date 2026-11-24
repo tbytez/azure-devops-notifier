@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runPoll } from '../src/sync.js';
-import { defaultState } from '../src/state.js';
+import { defaultState, migrateState } from '../src/state.js';
 import { watchKey, buildPrWebUrl } from '../src/urls.js';
 
 const NOW = 1700000000000;
@@ -152,9 +152,9 @@ test('auto discovery adds own active PRs, respects exclusions, skips non-selecte
   state.settings.selectedProjects = [{ id: 'p1', name: 'Proj' }, { id: 'p2', name: 'Other' }];
   const discovered = { pullRequestId: 55, title: 'Mine', status: 'active', isDraft: false, repository: { id: 'r9', name: 'repo9' } };
   const api = makeApi({
-    listActivePullRequests: async (projectId, creatorId) => {
-      assert.equal(creatorId, 'me');
-      return projectId === 'p1' ? [discovered] : [];
+    listActivePullRequests: async (projectId, identityId, role) => {
+      assert.equal(identityId, 'me');
+      return projectId === 'p1' && role === 'creator' ? [discovered] : [];
     },
   });
   const res = await runPoll(harness(state, api).deps);
@@ -167,6 +167,47 @@ test('auto discovery adds own active PRs, respects exclusions, skips non-selecte
   await runPoll(harness(state, api).deps);
   assert.equal(Object.keys(state.watches).length, watchCount - 1 + 0);
   assert.equal(state.watches[key], undefined);
+});
+
+test('reviewer discovery baselines existing assignments and alerts once for later assignments', async () => {
+  let state = makeState([]);
+  const assignments = [];
+  const emitted = [];
+  const api = makeApi({
+    listActivePullRequests: async (projectId, identityId, role) => {
+      assert.equal(projectId, 'p1');
+      assert.equal(identityId, 'me');
+      return role === 'reviewer' ? assignments : [];
+    },
+  });
+  const assign = (prId) => assignments.push({ ...prPayload({ pullRequestId: prId }), repository: { id: 'r1', name: 'repo' } });
+  const poll = () => runPoll(harness(state, api, { emitDesktop: (n) => emitted.push(n) }).deps);
+
+  assign(1);
+  const baseline = await poll();
+  assert.equal(baseline.discovered, 1);
+  assert.deepEqual(baseline.added, []);
+  state = migrateState(state);
+
+  assign(2);
+  assign(3);
+  const excluded = watchKey({ organization: ORG, projectId: 'p1', repoId: 'r1', prId: 3 });
+  state.excludedKeys.push(excluded);
+  const result = await poll();
+  assert.equal(result.discovered, 1);
+  assert.equal(state.watches[excluded], undefined);
+  assert.equal(result.added.length, 1);
+  assert.equal(result.added[0].title, 'Review requested');
+  assert.equal(result.added[0].category, 'reviewers');
+  assert.equal(result.added[0].prId, 2);
+  assert.deepEqual(emitted, result.added);
+  assert.deepEqual((await poll()).added, []);
+
+  assign(4);
+  state.settings.eventTypes.reviewers = false;
+  const muted = await poll();
+  assert.equal(muted.discovered, 1);
+  assert.deepEqual(muted.added, []);
 });
 
 test('discovery skipped when autoWatchMine off or no projects', async () => {

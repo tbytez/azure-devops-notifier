@@ -1,6 +1,6 @@
 # Azure DevOps Notifier
 
-A local-first Chrome extension for Azure DevOps pull request activity. Automatically follow your PRs, watch any PR by URL, and choose which changes trigger alerts.
+A local-first Chrome extension for Azure DevOps pull request activity. Automatically follow PRs you create or are asked to review, watch any PR by URL, and choose which changes trigger alerts.
 
 ## Setup
 
@@ -15,7 +15,7 @@ Requires Chrome 116+ and Node.js 22.18+.
    ```
 2. Open `chrome://extensions`, enable **Developer mode**, select **Load unpacked**, and choose this repository's folder.
 3. Open the extension and select **Set up**. Enter your Azure DevOps organization and a Personal Access Token with **Code (Read)** and **Project and Team (Read)**.
-4. Choose projects to discover your PRs automatically, or leave them unchecked and add individual PR URLs manually.
+4. Choose projects to discover your PRs and review requests automatically, or leave them unchecked and add individual PR URLs manually.
 5. Configure activity types and the polling interval in **Settings**. You can also set preferences per watched PR.
 
 For a prebuilt version, download the ZIP from [Releases](https://github.com/tbytez/azure-devops-notifier/releases), extract it, and start at step 2.
@@ -30,7 +30,7 @@ Note: upgrading to **v0.1.2** changes the extension ID once (the `key` is new in
 
 Desktop notifications are enabled by default, subject to Chrome permission and OS notification settings. Sound is optional and off by default; enable **Play notification sound**, save settings, or use **Test sound** to preview it. Light/dark mode is available in the dashboard and popup.
 
-Checks run every 1-10 minutes while Chrome is running. The first sync records a quiet baseline instead of notifying about old activity. Supports Azure DevOps Services (`dev.azure.com`), not on-premises Azure DevOps Server.
+Checks run every 1-10 minutes while Chrome is running. The first successful check for review assignments in each selected project starts watching existing assignments quietly. Later assignments trigger an alert when the Reviewers category is enabled. Each reviewer needs their own connected extension. Supports Azure DevOps Services (`dev.azure.com`), not on-premises Azure DevOps Server.
 
 ## Privacy
 

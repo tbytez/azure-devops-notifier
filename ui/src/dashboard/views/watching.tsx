@@ -356,8 +356,8 @@ export function WatchingView() {
         </EmptyState>
       )}
       {watches.length > 0 && shown.length === 0 && (
-        <EmptyState icon={<Eye className="h-7 w-7" />} title={filter === 'auto' ? 'None of your own PRs yet' : 'No pull requests added by link'} className="mt-4">
-          {filter === 'auto' ? 'Pull requests you create in selected projects appear here automatically.' : 'Paste a pull request link above to follow it.'}
+        <EmptyState icon={<Eye className="h-7 w-7" />} title={filter === 'auto' ? 'No automatically watched PRs yet' : 'No pull requests added by link'} className="mt-4">
+          {filter === 'auto' ? 'Pull requests you create or are asked to review in selected projects appear here automatically.' : 'Paste a pull request link above to follow it.'}
         </EmptyState>
       )}
 

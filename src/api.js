@@ -151,14 +151,14 @@ export class AzureApi {
     throw new ApiError('http', `Azure DevOps pagination exceeded ${MAX_PAGES} pages; results may be incomplete.`);
   }
 
-  async listActivePullRequests(projectId, creatorId) {
+  async listActivePullRequests(projectId, identityId, role = 'creator') {
     const path = `${enc(projectId)}/_apis/git/pullrequests`;
     const items = [];
     let skip = 0;
     for (let page = 0; page < MAX_PAGES; page++) {
       const { body } = await this._send(path, {
         'api-version': API_VERSION,
-        'searchCriteria.creatorId': creatorId,
+        [role === 'reviewer' ? 'searchCriteria.reviewerId' : 'searchCriteria.creatorId']: identityId,
         'searchCriteria.status': 'active',
         $top: 100,
         $skip: skip,

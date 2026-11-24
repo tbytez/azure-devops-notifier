@@ -73,6 +73,15 @@ test('network failure and timeout map to network kind', async () => {
   await assert.rejects(() => apiSlow.getPullRequest('p', 'r', 1), (e) => e.kind === 'network');
 });
 
+test('reviewer discovery uses only the Azure reviewer filter', async () => {
+  const { api, calls } = makeApi(() => jsonResponse({ value: [] }));
+  await api.listActivePullRequests('proj', 'assigned-user', 'reviewer');
+  const params = new URL(calls[0].url).searchParams;
+  assert.equal(params.get('searchCriteria.reviewerId'), 'assigned-user');
+  assert.equal(params.has('searchCriteria.creatorId'), false);
+  assert.equal(params.get('searchCriteria.status'), 'active');
+});
+
 test('pagination follows $skip for pull requests and $top', async () => {
   const pages = [
     { value: Array.from({ length: 100 }, (_, i) => ({ pullRequestId: i + 1 })) },

@@ -82,7 +82,7 @@ function Header({ title, sub, right }: { title: string; sub?: React.ReactNode; r
         <BrandMark className="h-8 w-8 rounded-[9px] shadow-sm" />
         <div className="min-w-0">
           <span className="block truncate text-[14.5px] font-semibold leading-5 tracking-[-0.01em]">{title}</span>
-          {sub && <div className="truncate text-[12px] leading-4 text-muted-foreground">{sub}</div>}
+          {sub && <div className="text-[12px] leading-4 text-muted-foreground">{sub}</div>}
         </div>
       </div>
       <span className="flex shrink-0 items-center gap-1">{right}</span>
@@ -191,7 +191,7 @@ function PopupBody() {
         )}
         <ul className="mt-5 space-y-2.5">
           {[
-            { icon: Eye, text: 'Your pull requests followed automatically' },
+            { icon: Eye, text: 'Your PRs and review requests followed automatically' },
             { icon: SlidersHorizontal, text: 'Choose exactly which activity alerts you' },
             { icon: Lock, text: 'Local-only. No servers, no telemetry' },
           ].map(({ icon: Icon, text }) => (
@@ -218,8 +218,9 @@ function PopupBody() {
           sub={
             <span className="flex items-center gap-1.5">
               <LiveDot state={live} />
-              {liveLabel(state)}
-              <span className="text-subtle">· {state.watches.length} watching</span>
+              <span className="truncate">
+                {liveLabel(state)} <span className="text-subtle">· {state.watches.length} watching</span>
+              </span>
             </span>
           }
           right={<ThemeToggle />}

@@ -20,7 +20,7 @@ const DEMO_IDENTITY = { id: 'demo-user-id', displayName: 'Demo User' };
 const DEMO_PRS = [
   {
     projectId: 'demo-proj-web', repoId: 'demo-repo-webapp', repoName: 'webapp', prId: 101,
-    title: 'Add sign-in with Microsoft', status: 'active', isDraft: false,
+    title: 'Add sign-in with Microsoft', status: 'active', isDraft: false, creatorId: DEMO_IDENTITY.id,
     reviewers: [
       { id: 'demo-user-id', displayName: 'Demo User', vote: 10, isRequired: true, hasDeclined: false },
       { id: 'demo-rev-1', displayName: 'Priya Natarajan', vote: 5, isRequired: true, hasDeclined: false },
@@ -155,9 +155,9 @@ function demoApiFor(state) {
     async listProjects() {
       return DEMO_PROJECTS.map((p) => ({ ...p }));
     },
-    async listActivePullRequests(projectId, creatorId) {
-      if (creatorId !== DEMO_IDENTITY.id) return [];
-      return DEMO_PRS.filter((p) => p.projectId === projectId && p.status === 'active' && p.reviewers.some((r) => r.id === creatorId)).map((p) => ({
+    async listActivePullRequests(projectId, identityId, role = 'creator') {
+      if (identityId !== DEMO_IDENTITY.id) return [];
+      return DEMO_PRS.filter((p) => p.projectId === projectId && p.status === 'active' && (role === 'reviewer' ? p.reviewers.some((r) => r.id === identityId) : p.creatorId === identityId)).map((p) => ({
         pullRequestId: p.prId,
         title: p.title,
         status: p.status,

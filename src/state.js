@@ -34,7 +34,7 @@ export function defaultState() {
     snapshots: {},
     notifications: [],
     lastSyncAt: null,
-    sync: { notBefore: 0, failures: 0 },
+    sync: { notBefore: 0, failures: 0, reviewerProjects: [] },
     errors: { global: null, items: {} },
     update: { checkedAt: 0, version: null, url: null, available: false },
   };
@@ -152,9 +152,13 @@ export function migrateState(raw) {
     ? raw.notifications.map(sanitizeNotification).filter(Boolean).slice(0, NOTIFICATION_LIMIT)
     : [];
   out.lastSyncAt = Number(raw.lastSyncAt) || null;
+  const reviewerProjects = new Set(Array.isArray(raw.sync?.reviewerProjects) ? raw.sync.reviewerProjects : []);
   out.sync = {
     notBefore: Number(raw.sync?.notBefore) || 0,
     failures: Number(raw.sync?.failures) || 0,
+    reviewerProjects: out.settings.autoWatchMine
+      ? out.settings.selectedProjects.map((p) => p.id).filter((id) => reviewerProjects.has(id))
+      : [],
   };
   out.errors = {
     global: typeof raw.errors?.global === 'string' ? raw.errors.global : null,

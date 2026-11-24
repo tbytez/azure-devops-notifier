@@ -306,6 +306,7 @@ html[data-surface='popup'] body {
 
   .live-dot {
     position: relative;
+    flex-shrink: 0;
     display: inline-block;
     width: 7px;
     height: 7px;

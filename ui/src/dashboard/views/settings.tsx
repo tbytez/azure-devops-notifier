@@ -371,7 +371,7 @@ export function SettingsView() {
           <Section
             id="projects"
             title="Projects"
-            description="Pull requests you create in these projects are discovered automatically. Existing watches continue until you unwatch them."
+            description="Pull requests you create or are asked to review in these projects are discovered automatically. Existing watches continue until you unwatch them."
           >
             <div className="surface overflow-hidden">
               {projects.length > 0 && (
@@ -420,8 +420,8 @@ export function SettingsView() {
             <div className="surface hairline">
               <Row
                 htmlFor="s-auto"
-                title="Automatically watch my pull requests"
-                description="Follow every PR you create in the selected projects."
+                title="Automatically watch my PRs and review requests"
+                description="Follow PRs you create or are asked to review in the selected projects."
                 control={<Switch id="s-auto" checked={draft.autoWatchMine} onCheckedChange={(v) => update('autoWatchMine', v)} />}
               />
               <Row

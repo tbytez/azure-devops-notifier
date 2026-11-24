@@ -182,7 +182,7 @@ export function ConnectView({ onConnected }: { onConnected: () => void }) {
         <NotificationPreview />
         <ul className="mt-8 grid gap-4 text-left sm:grid-cols-3 lg:max-w-[540px]">
           {[
-            { icon: Eye, title: 'Auto-follow', text: 'Your PRs, tracked' },
+            { icon: Eye, title: 'Auto-follow', text: 'Your PRs and review requests' },
             { icon: SlidersHorizontal, title: 'Only what matters', text: 'Pick activity per PR' },
             { icon: Lock, title: 'Private', text: 'No servers or telemetry' },
           ].map(({ icon: Icon, title, text }) => (
@@ -283,7 +283,7 @@ export function ConnectView({ onConnected }: { onConnected: () => void }) {
           <div className="mt-6">
             <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Choose projects</h2>
             <p className="mt-1 text-[14px] text-muted-foreground">
-              Signed in as <span className="font-medium text-foreground">{pending?.identity.displayName}</span>. Your pull requests in these projects are followed automatically.
+              Signed in as <span className="font-medium text-foreground">{pending?.identity.displayName}</span>. PRs you create or are asked to review in these projects are followed automatically.
             </p>
 
             <div className="mt-5 overflow-hidden rounded-xl border">

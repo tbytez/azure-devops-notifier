@@ -91,59 +91,76 @@ function subFailuresToCategories(failedSubs) {
 
 export async function runDiscovery(state, api, errors, now, rateCtx) {
   const settings = state.settings;
-  if (!settings.autoWatchMine || !settings.identity?.id) return { added: 0, authFailed: false };
   const projects = settings.selectedProjects || [];
-  if (!projects.length) return { added: 0, authFailed: false };
+  const initializedProjects = new Set(state.sync.reviewerProjects);
+  const notifications = [];
   let added = 0;
   let authFailed = false;
+
+  if (!settings.autoWatchMine || !settings.identity?.id) {
+    state.sync.reviewerProjects = [];
+    return { added, authFailed, notifications };
+  }
+
   for (const proj of projects) {
-    if (rateCtx?.rateLimited) break;
-    try {
-      const prs = await api.listActivePullRequests(proj.id, settings.identity.id);
-      for (const pr of prs || []) {
-        const repoId = pr?.repository?.id;
-        const prId = pr?.pullRequestId;
-        if (!repoId || !prId) continue;
-        const key = watchKey({
-          organization: settings.organization,
-          projectId: proj.id,
-          repoId,
-          prId,
-        });
-        if (state.watches[key] || state.excludedKeys.includes(key)) continue;
-        state.watches[key] = {
-          key,
-          organization: settings.organization,
-          projectId: proj.id,
-          projectName: proj.name,
-          repoId: String(repoId),
-          repoName: strOr(pr?.repository?.name, ''),
-          prId: Number(prId),
-          url: buildPrWebUrl({
+    for (const role of ['creator', 'reviewer']) {
+      if (rateCtx?.rateLimited) break;
+      try {
+        const prs = await api.listActivePullRequests(proj.id, settings.identity.id, role);
+        const notifyAssignment = role === 'reviewer' && initializedProjects.has(proj.id);
+        for (const pr of prs || []) {
+          const repoId = pr?.repository?.id;
+          const prId = pr?.pullRequestId;
+          if (!repoId || !prId) continue;
+          const key = watchKey({ organization: settings.organization, projectId: proj.id, repoId, prId });
+          if (state.watches[key] || state.excludedKeys.includes(key)) continue;
+          const repoName = strOr(pr?.repository?.name, '');
+          const watch = {
+            key,
             organization: settings.organization,
+            projectId: proj.id,
             projectName: proj.name,
-            repoName: strOr(pr?.repository?.name, ''),
-            prId,
-          }),
-          title: strOr(pr?.title, ''),
-          origin: 'auto',
-          eventTypes: null,
-          status: typeof pr?.status === 'string' ? pr.status : null,
-          isDraft: typeof pr?.isDraft === 'boolean' ? pr.isDraft : null,
-          addedAt: now,
-        };
-        added++;
-      }
-    } catch (e) {
-      noteFailure(e, rateCtx);
-      errors.items[`project:${proj.id}`] = sanitizeError(e);
-      if (isAuthError(e)) {
-        errors.global = sanitizeError(e);
-        authFailed = true;
+            repoId: String(repoId),
+            repoName,
+            prId: Number(prId),
+            url: buildPrWebUrl({ organization: settings.organization, projectName: proj.name, repoName, prId }),
+            title: strOr(pr?.title, ''),
+            origin: 'auto',
+            eventTypes: null,
+            status: typeof pr?.status === 'string' ? pr.status : null,
+            isDraft: typeof pr?.isDraft === 'boolean' ? pr.isDraft : null,
+            addedAt: now,
+          };
+          state.watches[key] = watch;
+          added++;
+
+          // Already watched PRs report reviewer changes through the snapshot diff.
+          if (notifyAssignment) {
+            const event = {
+              id: `${key}|reviewers|assignment|${now}`,
+              category: 'reviewers',
+              title: 'Review requested',
+              body: 'You were added as a reviewer.',
+            };
+            if (eventEnabled(event, watch, settings)) {
+              notifications.push(buildNotification(event, watch, now));
+            }
+          }
+        }
+        if (role === 'reviewer') initializedProjects.add(proj.id);
+      } catch (e) {
+        noteFailure(e, rateCtx);
+        errors.items[`project:${proj.id}`] = sanitizeError(e);
+        if (isAuthError(e)) {
+          errors.global = sanitizeError(e);
+          authFailed = true;
+        }
       }
     }
+    if (rateCtx?.rateLimited) break;
   }
-  return { added, authFailed };
+  state.sync.reviewerProjects = projects.map((p) => p.id).filter((id) => initializedProjects.has(id));
+  return { added, authFailed, notifications };
 }
 
 function strOr(v, fallback) {
@@ -213,7 +230,8 @@ export async function runPoll(deps) {
     }
   });
 
-  const addedNotifications = [];
+  const addedNotifications = discovery.notifications || [];
+  state.notifications.unshift(...addedNotifications);
   for (const r of results) {
     if (!r || r.error || !r.data) continue;
     const failedCats = subFailuresToCategories(r.failedSubs || new Set());
