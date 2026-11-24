@@ -183,6 +183,31 @@ test('staleness gate skips refetch within 6h; CHECK_UPDATES forces', async () =>
   assert.equal(res.update.version, '9.9.9');
 });
 
+test('GET_STATE clears an installed update notice without fetching GitHub', async () => {
+  for (const [installed, available] of [['0.1.3', true], ['0.1.4', false], ['0.1.5', false]]) {
+    const { api, listeners, store } = mockChrome();
+    const state = defaultState();
+    state.update = {
+      checkedAt: Date.now(),
+      version: '0.1.4',
+      url: 'https://github.com/tbytez/azure-devops-notifier/releases/tag/v0.1.4',
+      available: true,
+    };
+    store.set('azdoNotifier.v1', state);
+    api.runtime.getManifest = () => ({ version: installed });
+    let fetchCalls = 0;
+    init(api, { fetchImpl: async () => { fetchCalls += 1; return { ok: false }; } });
+    listeners.installed[0]({ reason: 'update', previousVersion: '0.1.2' });
+    const res = await new Promise((resolve) => {
+      listeners.message[0]({ type: 'GET_STATE' }, {}, resolve);
+    });
+    assert.equal(res.ok, true);
+    assert.equal(res.state.update.available, available, `installed version ${installed}`);
+    assert.equal(res.state.update.checkedAt, state.update.checkedAt);
+    assert.equal(fetchCalls, 0);
+  }
+});
+
 test('a failed fetch preserves a previously found update', async () => {
   const { api, listeners, store } = mockChrome();
   const responses = [releaseResponse('v9.9.9'), { ok: false, status: 500 }];

@@ -1,4 +1,5 @@
 import { CATEGORIES } from './core.js';
+import { isNewerVersion } from './update.js';
 import { buildNotificationUrl, parsePrUrl } from './urls.js';
 
 export const STATE_KEY = 'azdoNotifier.v1';
@@ -224,12 +225,16 @@ export function publicState(state, extras = {}) {
   };
 }
 
-export function createStorageState(storage) {
+export function createStorageState(storage, { installedVersion } = {}) {
   async function load() {
     const raw = await storage.get(STATE_KEY);
     const value = raw?.[STATE_KEY];
     if (value === undefined) return defaultState();
-    return migrateState(value);
+    const state = migrateState(value);
+    if (installedVersion) {
+      state.update.available = Boolean(state.update.url) && isNewerVersion(state.update.version, installedVersion);
+    }
+    return state;
   }
   async function save(state) {
     await storage.set({ [STATE_KEY]: state });

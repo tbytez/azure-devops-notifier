@@ -118,7 +118,8 @@ function registerNotificationClick(chromeApi) {
 
 function init(chromeApi, deps = {}) {
   chromeApiRef = chromeApi;
-  store = createStorageState(chromeApi.storage.local);
+  const installedVersion = chromeApi.runtime.getManifest?.()?.version;
+  store = createStorageState(chromeApi.storage.local, { installedVersion });
   const soundPlayer = createSoundPlayer(chromeApi);
   const fetchImpl = deps.fetchImpl || globalThis.fetch?.bind(globalThis);
   const now = deps.now || (() => Date.now());
@@ -135,9 +136,8 @@ function init(chromeApi, deps = {}) {
     } catch (e) {
       log('update check request failed', e?.message || e);
     }
-    const current = chromeApi.runtime.getManifest?.()?.version;
     state.update = latest
-      ? { checkedAt: now(), version: latest.version, url: latest.url, available: isNewerVersion(latest.version, current) }
+      ? { checkedAt: now(), version: latest.version, url: latest.url, available: isNewerVersion(latest.version, installedVersion) }
       : { ...prev, checkedAt: now() };
     await store.save(state);
     return { update: state.update };
