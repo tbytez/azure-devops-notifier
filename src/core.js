@@ -146,6 +146,8 @@ function normalizeThreads(threadsData, pr, identity) {
         authorId: str(author.id) || null,
         authorName: str(author.displayName) || str(author.uniqueName) || 'Unknown',
         updated,
+        publishedAt: Date.parse(c.publishedDate || ''),
+        isReply: Number(c.parentCommentId) > 0,
         hash: str(c.content),
         preview: commentPreview(str(c.content), names),
       };
@@ -263,7 +265,7 @@ function makeEvent(prKey, category, entityKey, revision, fields) {
   };
 }
 
-function diffComments(prKey, prev, next, events, revs, commentPreviewUpdates) {
+function diffComments(prKey, prev, next, events, revs, commentPreviewUpdates, catchUpRepliesSince) {
   const p = prev.comments || {};
   const n = next.comments || {};
   const snap = {};
@@ -280,13 +282,15 @@ function diffComments(prKey, prev, next, events, revs, commentPreviewUpdates) {
     };
     if (!old) {
       const rev = bumpRev(revs, `comment:${cid}`);
-      events.push(makeEvent(prKey, 'comments', `comment:${cid}`, rev, {
-        actorId: c.authorId,
-        actorName: c.authorName,
-        title: 'New comment',
-        target: { filePath: c.filePath },
-        body: c.preview,
-      }));
+      if (!catchUpRepliesSince || (c.isReply && c.publishedAt > catchUpRepliesSince)) {
+        events.push(makeEvent(prKey, 'comments', `comment:${cid}`, rev, {
+          actorId: c.authorId,
+          actorName: c.authorName,
+          title: 'New comment',
+          target: { filePath: c.filePath },
+          body: c.preview,
+        }));
+      }
       rec.rev = rev;
     } else {
       const changed = c.hash !== old.hash;
@@ -624,9 +628,12 @@ export function diffPr(prKey, prevSnapshot, data, ctx = {}) {
   } else {
     const evComments = [];
     const evThreads = [];
-    snapshot.comments = diffComments(prKey, prev, { comments: normThreads.comments }, evComments, snapshot, commentPreviewUpdates);
+    const catchUpRepliesSince = initFlags.comments ? 0 : ctx.catchUpRepliesSince;
+    snapshot.comments = diffComments(
+      prKey, prev, { comments: normThreads.comments }, evComments, snapshot, commentPreviewUpdates, catchUpRepliesSince,
+    );
     snapshot.threads = diffThreads(prKey, prev, { threads: normThreads.threads }, evThreads, snapshot);
-    if (initFlags.comments) events.push(...evComments);
+    if (initFlags.comments || catchUpRepliesSince) events.push(...evComments);
     if (initFlags.threads) events.push(...evThreads);
     nextInit.comments = true;
     nextInit.threads = true;

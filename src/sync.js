@@ -92,13 +92,13 @@ function subFailuresToCategories(failedSubs) {
 export async function runDiscovery(state, api, errors, now, rateCtx) {
   const settings = state.settings;
   const projects = settings.selectedProjects || [];
-  const initializedProjects = new Set(state.sync.reviewerProjects);
+  const reviewerProjects = new Map(Object.entries(state.sync.reviewerProjects));
   const notifications = [];
   let added = 0;
   let authFailed = false;
 
   if (!settings.autoWatchMine || !settings.identity?.id) {
-    state.sync.reviewerProjects = [];
+    state.sync.reviewerProjects = {};
     return { added, authFailed, notifications };
   }
 
@@ -107,7 +107,8 @@ export async function runDiscovery(state, api, errors, now, rateCtx) {
       if (rateCtx?.rateLimited) break;
       try {
         const prs = await api.listActivePullRequests(proj.id, settings.identity.id, role);
-        const notifyAssignment = role === 'reviewer' && initializedProjects.has(proj.id);
+        const notifyAssignment = role === 'reviewer' && reviewerProjects.has(proj.id);
+        const catchUpRepliesSince = notifyAssignment ? reviewerProjects.get(proj.id) : 0;
         for (const pr of prs || []) {
           const repoId = pr?.repository?.id;
           const prId = pr?.pullRequestId;
@@ -130,6 +131,7 @@ export async function runDiscovery(state, api, errors, now, rateCtx) {
             status: typeof pr?.status === 'string' ? pr.status : null,
             isDraft: typeof pr?.isDraft === 'boolean' ? pr.isDraft : null,
             addedAt: now,
+            ...(catchUpRepliesSince > 0 ? { catchUpRepliesSince } : {}),
           };
           state.watches[key] = watch;
           added++;
@@ -147,7 +149,7 @@ export async function runDiscovery(state, api, errors, now, rateCtx) {
             }
           }
         }
-        if (role === 'reviewer') initializedProjects.add(proj.id);
+        if (role === 'reviewer') reviewerProjects.set(proj.id, now);
       } catch (e) {
         noteFailure(e, rateCtx);
         errors.items[`project:${proj.id}`] = sanitizeError(e);
@@ -159,7 +161,9 @@ export async function runDiscovery(state, api, errors, now, rateCtx) {
     }
     if (rateCtx?.rateLimited) break;
   }
-  state.sync.reviewerProjects = projects.map((p) => p.id).filter((id) => initializedProjects.has(id));
+  state.sync.reviewerProjects = Object.fromEntries(projects
+    .filter(({ id }) => reviewerProjects.has(id))
+    .map(({ id }) => [id, reviewerProjects.get(id)]));
   return { added, authFailed, notifications };
 }
 
@@ -241,13 +245,14 @@ export async function runPoll(deps) {
       errors.items[r.key] = `Some activity could not be refreshed (${names}). Showing the last known state.`;
     }
     const prev = state.snapshots[r.key] || null;
-    const isBaseline = !prev;
     const { snapshot, events, commentPreviewUpdates } = diffPr(r.key, prev, r.data, {
       now,
       failed: failedCats,
       identity: state.settings.identity,
+      catchUpRepliesSince: r.watch.catchUpRepliesSince,
     });
     state.snapshots[r.key] = snapshot;
+    if (snapshot.init.comments) delete r.watch.catchUpRepliesSince;
     for (const [id, { original, unresolved, preview }] of commentPreviewUpdates) {
       const notification = notificationsById.get(id);
       if (notification && (notification.body === original || notification.body === unresolved)) {
@@ -259,7 +264,6 @@ export async function runPoll(deps) {
     if (typeof pr.isDraft === 'boolean') r.watch.isDraft = pr.isDraft;
     if (typeof pr.title === 'string' && pr.title) r.watch.title = pr.title;
 
-    if (isBaseline) continue;
     for (const ev of events) {
       if (!eventEnabled(ev, r.watch, state.settings)) continue;
       if (state.settings.ignoreSelf && ev.actorId && state.settings.identity?.id && ev.actorId === state.settings.identity.id) continue;

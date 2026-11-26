@@ -35,7 +35,7 @@ export function defaultState() {
     snapshots: {},
     notifications: [],
     lastSyncAt: null,
-    sync: { notBefore: 0, failures: 0, reviewerProjects: [] },
+    sync: { notBefore: 0, failures: 0, reviewerProjects: {} },
     errors: { global: null, items: {} },
     update: { checkedAt: 0, version: null, url: null, available: false },
   };
@@ -86,6 +86,9 @@ function sanitizeWatch(w) {
     status: typeof w.status === 'string' ? w.status : null,
     isDraft: typeof w.isDraft === 'boolean' ? w.isDraft : null,
     addedAt: Number(w.addedAt) || 0,
+    ...(Number.isFinite(w.catchUpRepliesSince) && w.catchUpRepliesSince > 0
+      ? { catchUpRepliesSince: w.catchUpRepliesSince }
+      : {}),
   };
 }
 
@@ -153,13 +156,19 @@ export function migrateState(raw) {
     ? raw.notifications.map(sanitizeNotification).filter(Boolean).slice(0, NOTIFICATION_LIMIT)
     : [];
   out.lastSyncAt = Number(raw.lastSyncAt) || null;
-  const reviewerProjects = new Set(Array.isArray(raw.sync?.reviewerProjects) ? raw.sync.reviewerProjects : []);
+  const savedReviewerProjects = raw.sync?.reviewerProjects;
+  // Older profiles recorded whether each project had been scanned, without a timestamp.
+  const reviewerProjects = Array.isArray(savedReviewerProjects)
+    ? new Map(savedReviewerProjects.map((id) => [id, 0]))
+    : new Map(Object.entries(isPlainObject(savedReviewerProjects) ? savedReviewerProjects : {}));
   out.sync = {
     notBefore: Number(raw.sync?.notBefore) || 0,
     failures: Number(raw.sync?.failures) || 0,
-    reviewerProjects: out.settings.autoWatchMine
-      ? out.settings.selectedProjects.map((p) => p.id).filter((id) => reviewerProjects.has(id))
-      : [],
+    reviewerProjects: Object.fromEntries(out.settings.autoWatchMine
+      ? out.settings.selectedProjects
+        .filter(({ id }) => reviewerProjects.has(id))
+        .map(({ id }) => [id, Number(reviewerProjects.get(id)) || 0])
+      : []),
   };
   out.errors = {
     global: typeof raw.errors?.global === 'string' ? raw.errors.global : null,

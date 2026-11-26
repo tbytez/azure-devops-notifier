@@ -59,7 +59,7 @@ function resetScopedData(state) {
   state.notifications = [];
   state.lastSyncAt = null;
   state.errors = { global: null, items: {} };
-  state.sync = { notBefore: 0, failures: 0, reviewerProjects: [] };
+  state.sync = { notBefore: 0, failures: 0, reviewerProjects: {} };
 }
 
 export function createHandler(deps) {

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Azure DevOps Notifier",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq3xd7xvX9NN+stmRoVxZb0p289drKp2nGt/3ryXbNMJcT3qpXDYfmOF0L3FBhANDroz8SoltrhVAZllmahEGezavTufGiUAJtra3Qe9OFWJC1qjOxCMBnRk6nI0YbyfuGn3qKeMmpC2jV918jpsUEf03067OTX2B7AtRFagln3suWouMBaISv0B00ThTfZL9AlbhrbB4hPKEPoRRinF0xj5qz33IMRYrzJzWVqwmYDKgiinVGw/gRkUWIoXqnY4P2gYOCgn+JcrHVVGsnOlg9WcSLFwfXKw6OqZkHjGomNZc/6LTiUpQC4vHUwO95UIUgIWHQGWlkDy3nK+x4k3q5QIDAQAB",
   "minimum_chrome_version": "116",
   "description": "Notifications for Azure DevOps pull request activity, right in your browser toolbar.",

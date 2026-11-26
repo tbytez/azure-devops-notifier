@@ -218,12 +218,21 @@ test('reviewer discovery baselines existing assignments and alerts once for late
       assert.equal(identityId, 'me');
       return role === 'reviewer' ? assignments : [];
     },
+    getThreads: async (_, __, prId) => prId <= 2 ? [{
+      id: 1,
+      comments: [{
+        id: 2, parentCommentId: 1, content: 'An author reply',
+        author: { id: 'owner' }, publishedDate: new Date(prId === 1 ? NOW - 1000 : NOW + 1000).toISOString(),
+      }],
+    }] : [],
   });
   const assign = (prId) => assignments.push({ ...prPayload({ pullRequestId: prId }), repository: { id: 'r1', name: 'repo' } });
-  const poll = () => runPoll(harness(state, api, { emitDesktop: (n) => emitted.push(n) }).deps);
+  const poll = (now = NOW + 2000) => runPoll({
+    ...harness(state, api, { emitDesktop: (n) => emitted.push(n) }).deps, now,
+  });
 
   assign(1);
-  const baseline = await poll();
+  const baseline = await poll(NOW);
   assert.equal(baseline.discovered, 1);
   assert.deepEqual(baseline.added, []);
   state = migrateState(state);
@@ -235,10 +244,11 @@ test('reviewer discovery baselines existing assignments and alerts once for late
   const result = await poll();
   assert.equal(result.discovered, 1);
   assert.equal(state.watches[excluded], undefined);
-  assert.equal(result.added.length, 1);
+  assert.deepEqual(result.added.map((n) => n.category), ['reviewers', 'comments']);
   assert.equal(result.added[0].title, 'Review requested');
   assert.equal(result.added[0].category, 'reviewers');
   assert.equal(result.added[0].prId, 2);
+  assert.equal(result.added[1].prId, 2);
   assert.deepEqual(emitted, result.added);
   assert.deepEqual((await poll()).added, []);
 
@@ -247,6 +257,48 @@ test('reviewer discovery baselines existing assignments and alerts once for late
   const muted = await poll();
   assert.equal(muted.discovered, 1);
   assert.deepEqual(muted.added, []);
+});
+
+test('a new review watch catches replies posted between scans even if its first thread fetch fails', async () => {
+  let state = makeState([], { settings: { ignoreSelf: true } });
+  let assigned = false;
+  let threadsAvailable = false;
+  const emitted = [];
+  const comment = (id, parentCommentId, authorId, publishedAt) => ({
+    id, parentCommentId, author: { id: authorId }, content: `Comment ${id}`,
+    publishedDate: new Date(publishedAt).toISOString(),
+  });
+  const api = makeApi({
+    listActivePullRequests: async (_, __, role) => assigned && role === 'reviewer'
+      ? [{ pullRequestId: 1, repository: { id: 'r1', name: 'repo' } }]
+      : [],
+    getThreads: async () => {
+      if (!threadsAvailable) throw new Error('threads unavailable');
+      return [{ id: 42, status: 'active', comments: [
+        comment(1, 0, 'me', NOW - 3000),
+        comment(2, 1, 'owner', NOW - 1000),
+        comment(3, 1, 'owner', NOW + 1000),
+        comment(4, 1, 'me', NOW + 1000),
+      ] }];
+    },
+  });
+  const poll = (now) => runPoll({
+    ...harness(state, api, { emitDesktop: (n) => emitted.push(n) }).deps, now,
+  });
+
+  assert.deepEqual((await poll(NOW)).added, []);
+  assigned = true;
+  assert.deepEqual((await poll(NOW + 2000)).added.map((n) => n.category), ['reviewers']);
+  state = migrateState(state);
+  threadsAvailable = true;
+
+  const { added } = await poll(NOW + 3000);
+  assert.equal(added.length, 1);
+  assert.equal(added[0].category, 'comments');
+  assert.equal(added[0].body, 'Comment 3');
+  assert.equal(added[0].url, `${makeWatch().url}?_a=overview&discussionId=42`);
+  assert.deepEqual(emitted.slice(1), added);
+  assert.deepEqual((await poll(NOW + 4000)).added, []);
 });
 
 test('discovery skipped when autoWatchMine off or no projects', async () => {
